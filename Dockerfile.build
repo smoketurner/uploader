@@ -1,0 +1,14 @@
+FROM maven:3-jdk-8
+MAINTAINER Justin Plock <jplock@smoketurner.com>
+
+RUN mkdir -p /src/uploader-application
+WORKDIR /src
+
+# selectively add the POM file
+COPY pom.xml /src
+COPY uploader-application/pom.xml /src/uploader-application
+# download all of the dependencies
+#RUN mvn verify clean --fail-never
+
+COPY . /src
+RUN mvn package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dsource.skip=true -Ddwpackage.skip=true

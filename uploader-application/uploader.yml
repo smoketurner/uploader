@@ -1,0 +1,45 @@
+# Netty-specific options.
+netty:
+
+  # Port to listen on for new events
+  listenPort: 8888
+
+  # Maximum line length
+  maxLength: 32KB
+
+  ssl: true
+  selfSignedCert: true
+
+# AWS-specific options.
+aws:
+  bucketName: smoketurner-uploads
+
+  # Maximum upload size
+  maxUploadSize: 10MB
+
+# HTTP-specific options.
+server:
+  type: simple
+  minThreads: 1
+  applicationContextPath: /
+  connector:
+    type: http
+    port: 8080
+    acceptorThreads: 1
+    selectorThreads: 1
+
+  requestLog:
+    appenders:
+      - type: console
+        timeZone: UTC
+        target: stdout
+
+logging:
+  level: INFO
+  loggers:
+    com.smoketurner.uploader: DEBUG
+    io.netty: INFO
+  appenders:
+    - type: console
+      timeZone: UTC
+      target: stdout
