@@ -7,12 +7,13 @@ netty:
   # Maximum line length
   maxLength: 32KB
 
-  ssl: true
+  ssl: false
   selfSignedCert: true
 
 # AWS-specific options.
 aws:
   bucketName: smoketurner-uploads
+  prefix: events
 
   # Maximum upload size
   maxUploadSize: 10MB
@@ -39,6 +40,7 @@ logging:
   loggers:
     com.smoketurner.uploader: DEBUG
     io.netty: INFO
+    com.amazonaws.services.s3.transfer: DEBUG
   appenders:
     - type: console
       timeZone: UTC

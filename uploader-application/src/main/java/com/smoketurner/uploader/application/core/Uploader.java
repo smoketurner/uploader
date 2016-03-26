@@ -16,6 +16,7 @@
 package com.smoketurner.uploader.application.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -46,7 +47,7 @@ public class Uploader {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(Uploader.class);
     private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormat
-            .forPattern("yyyy-MM-dd-HH-mm-ss");
+            .forPattern("yyyy/MM/dd/HH/mm/ss");
     private final String bucketName;
     private final Optional<String> prefix;
     private final TransferManager s3;
@@ -98,16 +99,18 @@ public class Uploader {
 
         final S3ProgressListener listener = new S3ProgressListener(key,
                 nanoTime(), batch.getCount(), batch.size());
-        final PutObjectRequest request = new PutObjectRequest(bucketName, key,
-                batch.getInputStream(), metadata)
-                        .withGeneralProgressListener(listener);
 
         try {
+            final PutObjectRequest request = new PutObjectRequest(bucketName,
+                    key, batch.getInputStream(), metadata)
+                            .withGeneralProgressListener(listener);
             s3.upload(request);
         } catch (AmazonServiceException e) {
             LOGGER.error("Service error uploading to S3", e);
         } catch (AmazonClientException e) {
             LOGGER.error("Client error uploading to S3", e);
+        } catch (IOException e) {
+            LOGGER.error("Error uploading batch", e);
         }
     }
 

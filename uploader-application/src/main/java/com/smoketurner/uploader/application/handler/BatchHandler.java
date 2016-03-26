@@ -52,6 +52,7 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, byte[] msg)
             throws Exception {
+
         eventMeter.mark();
 
         // first batch after startup
@@ -82,6 +83,8 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         if (batch != null && !batch.isEmpty()) {
+            LOGGER.debug("Channel inactive, sending remaining batch of {}",
+                    batch.getCount());
             if (!batch.isFinished()) {
                 batch.finish();
             }
@@ -96,6 +99,7 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
         if (evt instanceof IdleStateEvent) {
             final IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state() == IdleState.READER_IDLE) {
+                LOGGER.debug("No data received on channel, closing");
                 ctx.close();
             }
         }

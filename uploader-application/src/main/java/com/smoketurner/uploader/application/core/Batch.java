@@ -77,7 +77,8 @@ public class Batch {
         return finished.get();
     }
 
-    public InputStream getInputStream() {
+    public InputStream getInputStream() throws IOException {
+        finish();
         return new ByteArrayInputStream(buffer.toByteArray());
     }
 }
