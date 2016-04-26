@@ -49,8 +49,8 @@ public class NettyConfiguration {
 
     @NotNull
     @MinSize(value = 1, unit = SizeUnit.BYTES)
-    @MaxSize(value = 1, unit = SizeUnit.MEGABYTES)
-    private Size maxLength = Size.kilobytes(32);
+    @MaxSize(value = 250, unit = SizeUnit.KILOBYTES)
+    private Size maxLength = Size.kilobytes(100);
 
     @PortRange
     private int listenPort = 8888;
