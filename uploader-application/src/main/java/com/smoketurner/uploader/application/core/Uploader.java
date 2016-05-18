@@ -140,9 +140,9 @@ public class Uploader {
         try {
             final MessageDigest msg = MessageDigest.getInstance("md5");
             msg.update(str.getBytes(StandardCharsets.UTF_8), 0, str.length());
-            return new BigInteger(1, msg.digest()).toString(16).substring(0, 3);
+            return new BigInteger(1, msg.digest()).toString(16).substring(0, 1);
         } catch (NoSuchAlgorithmException ignore) {
-            return "___";
+            return "_";
         }
     }
 

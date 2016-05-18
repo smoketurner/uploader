@@ -61,6 +61,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         p.addLast("idleStateHandler", new IdleStateHandler(60, 0, 0));
+        p.addLast("auth", new AuthHandler());
         p.addLast("line", new LineBasedFrameDecoder(Ints.checkedCast(maxLength),
                 true, true));
         p.addLast("decoder", new ByteArrayDecoder());

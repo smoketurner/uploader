@@ -5,7 +5,7 @@ netty:
   listenPort: 8888
 
   # Maximum line length
-  maxLength: 32KB
+  maxLength: 100KB
 
   ssl: false
   selfSignedCert: true

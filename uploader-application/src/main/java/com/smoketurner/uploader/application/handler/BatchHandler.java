@@ -53,6 +53,8 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
     public void channelRead0(ChannelHandlerContext ctx, byte[] msg)
             throws Exception {
 
+        LOGGER.debug("Received message");
+
         eventMeter.mark();
 
         // first batch after startup
