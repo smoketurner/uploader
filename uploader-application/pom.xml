@@ -11,10 +11,6 @@
     <artifactId>uploader-application</artifactId>
     <name>Uploader Application</name>
 
-    <properties>
-        <os.detection.classifierWithLikes>linux</os.detection.classifierWithLikes>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -39,7 +35,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>1.1.33.Fork16</version>
+            <version>1.1.33.Fork17</version>
             <classifier>${os.detected.classifier}</classifier>
         </dependency>
         <dependency>
@@ -49,13 +45,6 @@
     </dependencies>
     
     <build>
-        <extensions>
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>1.5.0.Final</version>
-            </extension>
-        </extensions>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

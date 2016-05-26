@@ -18,6 +18,8 @@ package com.smoketurner.uploader.application.config;
 import java.io.File;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.smoketurner.uploader.application.core.Uploader;
@@ -46,6 +48,9 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
 public class NettyConfiguration {
+
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(NettyConfiguration.class);
 
     @NotNull
     @MinSize(value = 1, unit = SizeUnit.BYTES)
@@ -148,9 +153,11 @@ public class NettyConfiguration {
         final EventLoopGroup bossGroup;
         final EventLoopGroup workerGroup;
         if (Epoll.isAvailable()) {
+            LOGGER.info("Using epoll event loop");
             bossGroup = new EpollEventLoopGroup(1);
             workerGroup = new EpollEventLoopGroup();
         } else {
+            LOGGER.info("Using NIO event loop");
             bossGroup = new NioEventLoopGroup(1);
             workerGroup = new NioEventLoopGroup();
         }

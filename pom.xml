@@ -27,8 +27,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <file.encoding>UTF-8</file.encoding>
         <dropwizard.version>1.0.0-rc2</dropwizard.version>
-        <netty.version>4.0.36.Final</netty.version>
-        <aws.version>1.11.1</aws.version>
+        <netty.version>4.1.0.Final</netty.version>
+        <aws.version>1.11.4</aws.version>
     </properties>
 
     <modules>
