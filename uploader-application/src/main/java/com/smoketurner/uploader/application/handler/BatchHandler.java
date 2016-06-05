@@ -15,6 +15,7 @@
  */
 package com.smoketurner.uploader.application.handler;
 
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
@@ -32,7 +33,7 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
             .getLogger(BatchHandler.class);
     private final long maxUploadBytes;
     private final Meter eventMeter;
-    private Batch batch;
+    private final AtomicReference<Batch> curBatch = new AtomicReference<>();
 
     /**
      * Constructor
@@ -50,30 +51,30 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
     }
 
     @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        LOGGER.debug("channelActive: creating new batch");
+        curBatch.set(new Batch());
+    }
+
+    @Override
     public void channelRead0(ChannelHandlerContext ctx, byte[] msg)
             throws Exception {
 
-        LOGGER.trace("Received message");
+        LOGGER.trace("channelRead0: received message");
 
         eventMeter.mark();
 
-        // first batch after startup
-        if (batch == null) {
-            batch = new Batch();
-        } else if (batch.isFinished()) {
-            ctx.fireChannelRead(batch);
-            batch = new Batch();
-        }
-
+        final Batch batch = curBatch.get();
         batch.add(msg);
 
         if (batch.size() > maxUploadBytes) {
-            LOGGER.debug("Batch size {} exceeds max upload size of {}",
+            LOGGER.debug(
+                    "Batch size {} bytes exceeds max upload size of {} bytes",
                     batch.size(), maxUploadBytes);
 
             batch.finish();
             ctx.fireChannelRead(batch);
-            batch = new Batch();
+            curBatch.set(new Batch());
         }
     }
 
@@ -84,14 +85,14 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        final Batch batch = curBatch.get();
         if (batch != null && !batch.isEmpty()) {
-            LOGGER.debug("Channel inactive, sending remaining batch of {}",
+            LOGGER.debug(
+                    "Channel inactive, sending remaining batch of {} events",
                     batch.getCount());
-            if (!batch.isFinished()) {
-                batch.finish();
-            }
+            batch.finish();
             ctx.fireChannelRead(batch);
-            batch = new Batch();
+            curBatch.set(null);
         }
     }
 

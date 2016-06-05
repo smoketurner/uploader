@@ -16,6 +16,7 @@
 package com.smoketurner.uploader.application.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ public class S3ProgressListener implements ProgressListener {
     private final int count;
     private final int size;
 
+    // metrics
     private final Timer uploadTime;
     private final Counter successCounter;
     private final Counter failedCounter;
@@ -53,7 +55,7 @@ public class S3ProgressListener implements ProgressListener {
      */
     public S3ProgressListener(final String key, final long start,
             final int count, final int size) {
-        this.key = key;
+        this.key = Objects.requireNonNull(key);
         this.start = start;
         this.count = count;
         this.size = size;
@@ -72,24 +74,24 @@ public class S3ProgressListener implements ProgressListener {
     public void progressChanged(ProgressEvent progressEvent) {
         switch (progressEvent.getEventType()) {
         case CLIENT_REQUEST_FAILED_EVENT:
-            LOGGER.debug("Failed API request for upload {}", key);
+            LOGGER.debug("Failed API request for upload: {}", key);
             break;
         case CLIENT_REQUEST_RETRY_EVENT:
-            LOGGER.debug("Retrying API request for upload {}", key);
+            LOGGER.debug("Retrying API request for upload: {}", key);
             break;
         case CLIENT_REQUEST_STARTED_EVENT:
-            LOGGER.debug("Starting API request for upload {}", key);
+            LOGGER.debug("Starting API request for upload: {}", key);
             break;
         case CLIENT_REQUEST_SUCCESS_EVENT:
-            LOGGER.debug("Finished API request for upload {}", key);
+            LOGGER.debug("Finished API request for upload: {}", key);
             break;
         case TRANSFER_CANCELED_EVENT:
             LOGGER.warn("Cancelled upload {}", key);
             break;
         case TRANSFER_COMPLETED_EVENT:
-            final long took = (System.nanoTime() - start) / 1000000;
+            final long took = System.nanoTime() - start;
 
-            uploadTime.update(took, TimeUnit.MILLISECONDS);
+            uploadTime.update(took, TimeUnit.NANOSECONDS);
             successCounter.inc();
 
             LOGGER.info(
@@ -97,26 +99,27 @@ public class S3ProgressListener implements ProgressListener {
                     key, count, size, took);
             break;
         case TRANSFER_FAILED_EVENT:
-            LOGGER.error("Failed to upload {}", key);
+            LOGGER.error("Failed to upload: {}", key);
             failedCounter.inc();
             break;
         case TRANSFER_PART_COMPLETED_EVENT:
-            LOGGER.trace("Completed part for {} bytes: {}", key,
+            LOGGER.trace("Completed part for \"{}\" bytes: {}", key,
                     progressEvent.getBytes());
             break;
         case TRANSFER_PART_FAILED_EVENT:
-            LOGGER.debug("Failed part for {} bytes: {}", key,
+            LOGGER.debug("Failed part for \"{}\" bytes: {}", key,
                     progressEvent.getBytes());
             break;
         case TRANSFER_PART_STARTED_EVENT:
-            LOGGER.trace("Started part for {} bytes: {}", key,
+            LOGGER.trace("Started part for \"{}\" bytes: {}", key,
                     progressEvent.getBytes());
             break;
         case TRANSFER_PREPARING_EVENT:
-            LOGGER.debug("Preparing upload {} total size: {} bytes", key, size);
+            LOGGER.debug("Preparing upload \"{}\" total size: {} bytes", key,
+                    size);
             break;
         case TRANSFER_STARTED_EVENT:
-            LOGGER.info("Started uploading {}", key);
+            LOGGER.info("Started uploading: {}", key);
             break;
         case HTTP_REQUEST_COMPLETED_EVENT:
         case HTTP_REQUEST_CONTENT_RESET_EVENT:

@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
 import org.joda.time.DateTime;
@@ -48,27 +47,23 @@ public class Uploader {
             .getLogger(Uploader.class);
     private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormat
             .forPattern("yyyy/MM/dd/HH/mm/ss");
-    private final String bucketName;
-    private final Optional<String> prefix;
-    private final TransferManager s3;
+    private final AwsConfiguration configuration;
+
+    // metrics
     private final Histogram batchSize;
     private final Histogram batchCount;
+
+    // this isn't set in the constructor so we can configure the executor
+    private TransferManager s3;
 
     /**
      * Constructor
      *
-     * @param s3
-     *            AWS S3 transfer manager
      * @param configuration
      *            AWS configuration
      */
-    public Uploader(@Nonnull final TransferManager s3,
-            @Nonnull final AwsConfiguration configuration) {
-        Objects.requireNonNull(configuration);
-
-        this.s3 = Objects.requireNonNull(s3);
-        this.bucketName = configuration.getBucketName();
-        this.prefix = configuration.getPrefix();
+    public Uploader(@Nonnull final AwsConfiguration configuration) {
+        this.configuration = Objects.requireNonNull(configuration);
 
         final MetricRegistry registry = SharedMetricRegistries
                 .getOrCreate("default");
@@ -76,6 +71,16 @@ public class Uploader {
         this.batchSize = registry.histogram(name(Uploader.class, "batch-size"));
         this.batchCount = registry
                 .histogram(name(Uploader.class, "batch-count"));
+    }
+
+    /**
+     * Set the {@link TransferManager} to use for uploading to S3
+     *
+     * @param s3
+     *            Transfer Manager
+     */
+    public void setTransferManager(final TransferManager s3) {
+        this.s3 = Objects.requireNonNull(s3);
     }
 
     /**
@@ -90,7 +95,7 @@ public class Uploader {
 
         final ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentEncoding("gzip");
-        metadata.setContentType(MediaType.TEXT_PLAIN);
+        metadata.setContentType(MediaType.APPLICATION_JSON);
         metadata.setContentLength(batch.size());
         metadata.addUserMetadata("count", String.valueOf(batch.getCount()));
 
@@ -101,9 +106,9 @@ public class Uploader {
                 nanoTime(), batch.getCount(), batch.size());
 
         try {
-            final PutObjectRequest request = new PutObjectRequest(bucketName,
-                    key, batch.getInputStream(), metadata)
-                            .withGeneralProgressListener(listener);
+            final PutObjectRequest request = new PutObjectRequest(
+                    configuration.getBucketName(), key, batch.getInputStream(),
+                    metadata).withGeneralProgressListener(listener);
             s3.upload(request);
         } catch (AmazonServiceException e) {
             LOGGER.error("Service error uploading to S3", e);
@@ -122,8 +127,9 @@ public class Uploader {
     public String generateKey() {
         final String key = String.format("%s/events_%s.log.gz",
                 now().toString(KEY_DATE_FORMAT), nanoTime());
-        if (prefix.isPresent()) {
-            return String.format("%s/%s-%s", prefix.get(), getHash(key), key);
+        if (configuration.getPrefix().isPresent()) {
+            return String.format("%s/%s-%s", configuration.getPrefix().get(),
+                    getHash(key), key);
         }
         return String.format("%s-%s", getHash(key), key);
     }

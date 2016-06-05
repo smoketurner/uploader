@@ -15,7 +15,6 @@
  */
 package com.smoketurner.uploader.application.handler;
 
-import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -30,11 +29,14 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        final InetSocketAddress remote = (InetSocketAddress) ctx.channel()
-                .remoteAddress();
-        if (remote != null) {
-            LOGGER.info("New connection from: <{}:{}>", remote.getAddress(),
-                    remote.getPort());
-        }
+        LOGGER.info("New connection from: <{}>",
+                ctx.channel().remoteAddress().toString());
+
+        // This handler is only called once per channel when the channel becomes
+        // active, so we remove it from the pipeline to avoid having to traverse
+        // it when receiving data.
+        ctx.channel().pipeline().remove(this);
+
+        ctx.fireChannelActive();
     }
 }
