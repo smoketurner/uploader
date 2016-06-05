@@ -16,7 +16,9 @@
 package com.smoketurner.uploader.application.config;
 
 import java.io.File;
+import java.security.cert.CertificateException;
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +132,7 @@ public class NettyConfiguration {
     @JsonIgnore
     public ChannelFuture build(@Nonnull final Environment environment,
             @Nonnull final Uploader uploader, @Nonnull final Size maxUploadSize)
-            throws Exception {
+            throws SSLException, CertificateException {
 
         // Configure SSL
         final SslContext sslCtx;
