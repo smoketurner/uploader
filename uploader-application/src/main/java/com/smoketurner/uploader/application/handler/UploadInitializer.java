@@ -28,8 +28,9 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 public class UploadInitializer extends ChannelInitializer<SocketChannel> {
 
+    private static final AuthHandler AUTH_HANDLER = new AuthHandler();
+    private final UploadHandler uploadHandler;
     private final SslContext sslCtx;
-    private final Uploader uploader;
     private final long maxLength;
     private final long maxUploadBytes;
 
@@ -48,7 +49,8 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
     public UploadInitializer(final SslContext sslCtx, final Uploader uploader,
             final long maxLength, final long maxUploadBytes) {
         this.sslCtx = sslCtx;
-        this.uploader = Objects.requireNonNull(uploader);
+        Objects.requireNonNull(uploader);
+        this.uploadHandler = new UploadHandler(uploader);
         this.maxLength = maxLength;
         this.maxUploadBytes = maxUploadBytes;
     }
@@ -61,11 +63,11 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         p.addLast("idleStateHandler", new IdleStateHandler(60, 0, 0));
-        p.addLast("auth", new AuthHandler());
+        p.addLast("auth", AUTH_HANDLER);
         p.addLast("line", new LineBasedFrameDecoder(Ints.checkedCast(maxLength),
                 true, true));
         p.addLast("decoder", new ByteArrayDecoder());
         p.addLast("batcher", new BatchHandler(maxUploadBytes));
-        p.addLast("uploader", new UploadHandler(uploader));
+        p.addLast("uploader", uploadHandler);
     }
 }
