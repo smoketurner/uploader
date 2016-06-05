@@ -22,6 +22,7 @@ import com.codahale.metrics.SharedMetricRegistries;
 import com.smoketurner.uploader.application.config.AwsConfiguration;
 import com.smoketurner.uploader.application.config.UploaderConfiguration;
 import com.smoketurner.uploader.application.core.Uploader;
+import com.smoketurner.uploader.application.health.AmazonS3HealthCheck;
 import com.smoketurner.uploader.application.resources.PingResource;
 import com.smoketurner.uploader.application.resources.VersionResource;
 import io.dropwizard.Application;
@@ -54,6 +55,8 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
         // Configure the Netty TCP server
         configuration.getNetty().build(environment, uploader,
                 awsConfig.getMaxUploadSize());
+
+        environment.healthChecks().register("s3", new AmazonS3HealthCheck(s3));
 
         // Resources
         environment.jersey().register(new PingResource());
