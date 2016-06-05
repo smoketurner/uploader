@@ -37,6 +37,9 @@ public class AwsConfiguration {
     @NotEmpty
     private String bucketName;
 
+    @NotNull
+    @Valid
+    @UnwrapValidatedValue(false)
     private Optional<String> prefix = Optional.empty();
 
     @NotNull

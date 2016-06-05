@@ -27,6 +27,7 @@ import com.smoketurner.uploader.application.resources.PingResource;
 import com.smoketurner.uploader.application.resources.VersionResource;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
+import io.netty.channel.ChannelFuture;
 
 public class UploaderApplication extends Application<UploaderConfiguration> {
 
@@ -49,12 +50,16 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
         // set up S3 client
         final AwsConfiguration awsConfig = configuration.getAws();
         final AmazonS3Client s3 = awsConfig.buildS3(environment);
-        final TransferManager transfer = new TransferManager(s3);
-        final Uploader uploader = new Uploader(transfer, awsConfig);
+        final Uploader uploader = new Uploader(awsConfig);
 
         // Configure the Netty TCP server
-        configuration.getNetty().build(environment, uploader,
-                awsConfig.getMaxUploadSize());
+        final ChannelFuture future = configuration.getNetty().build(environment,
+                uploader, awsConfig.getMaxUploadSize());
+
+        // Configure the transfer manager to use the Netty event loop
+        final TransferManager transfer = new TransferManager(s3,
+                future.channel().eventLoop(), false);
+        uploader.setTransferManager(transfer);
 
         environment.healthChecks().register("s3", new AmazonS3HealthCheck(s3));
 

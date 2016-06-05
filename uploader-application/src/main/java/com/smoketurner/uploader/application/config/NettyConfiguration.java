@@ -128,7 +128,7 @@ public class NettyConfiguration {
     }
 
     @JsonIgnore
-    public void build(@Nonnull final Environment environment,
+    public ChannelFuture build(@Nonnull final Environment environment,
             @Nonnull final Uploader uploader, @Nonnull final Size maxUploadSize)
             throws Exception {
 
@@ -170,6 +170,7 @@ public class NettyConfiguration {
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .option(ChannelOption.SO_BACKLOG, 100)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.TCP_NODELAY, true)
                 .childHandler(initializer);
 
         if (Epoll.isAvailable()) {
@@ -181,5 +182,6 @@ public class NettyConfiguration {
         // Start the server
         final ChannelFuture future = bootstrap.bind(listenPort);
         environment.lifecycle().manage(new ChannelFutureManager(future));
+        return future;
     }
 }
