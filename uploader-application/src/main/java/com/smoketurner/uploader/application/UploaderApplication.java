@@ -18,7 +18,6 @@ package com.smoketurner.uploader.application;
 import javax.annotation.Nonnull;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.transfer.TransferManager;
-import com.codahale.metrics.SharedMetricRegistries;
 import com.smoketurner.uploader.application.config.AwsConfiguration;
 import com.smoketurner.uploader.application.config.UploaderConfiguration;
 import com.smoketurner.uploader.application.core.Uploader;
@@ -44,8 +43,6 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
     @Override
     public void run(@Nonnull final UploaderConfiguration configuration,
             @Nonnull final Environment environment) throws Exception {
-
-        SharedMetricRegistries.add("default", environment.metrics());
 
         // set up S3 client
         final AwsConfiguration awsConfig = configuration.getAws();
