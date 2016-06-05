@@ -31,9 +31,12 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(BatchHandler.class);
-    private final long maxUploadBytes;
-    private final Meter eventMeter;
+
     private final AtomicReference<Batch> curBatch = new AtomicReference<>();
+    private final long maxUploadBytes;
+
+    // metrics
+    private final Meter eventMeter;
 
     /**
      * Constructor
