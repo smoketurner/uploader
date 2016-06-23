@@ -172,7 +172,6 @@ public class NettyConfiguration {
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .option(ChannelOption.SO_BACKLOG, 100)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.TCP_NODELAY, true)
                 .childHandler(initializer);
 
         if (Epoll.isAvailable()) {
