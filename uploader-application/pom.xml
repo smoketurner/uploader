@@ -12,7 +12,7 @@
     <name>Uploader Application</name>
 
     <properties>
-        <jmh.version>1.12</jmh.version>
+        <jmh.version>1.13</jmh.version>
     </properties>
 
     <dependencies>
