@@ -58,7 +58,8 @@ public class BatchTest {
         batch.add("test3".getBytes(StandardCharsets.UTF_8));
 
         final String actual = new BufferedReader(new InputStreamReader(
-                new GZIPInputStream(batch.getInputStream()))).lines()
+                new GZIPInputStream(batch.getInputStream()),
+                StandardCharsets.UTF_8)).lines()
                         .collect(Collectors.joining("\n"));
 
         assertThat(actual).isEqualTo("test1\ntest2\ntest3");
