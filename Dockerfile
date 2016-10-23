@@ -18,12 +18,12 @@ RUN apk add --no-cache curl openjdk8="$JAVA_ALPINE_VERSION" && \
     mv apache-maven-3.3.9 /usr/lib/mvn && \
     # build the application into a single JAR, including dependencies
     mvn package -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dmaven.source.skip=true && \
-    rm uploader-application/target/original-*.jar && \
-    mv uploader-application/target/*.jar app.jar && \
+    rm target/original-*.jar && \
+    mv target/*.jar app.jar && \
     # remove all build artifacts & dependencies, Maven, and the JDK
     rm -rf /root/.m2 && \
     rm -rf /usr/lib/mvn && \
-    rm -rf uploader-application/target && \
+    rm -rf target && \
     apk del openjdk8
 
 CMD java $JAVA_OPTS -Ddw.server.connector.port=$PORT -jar app.jar server config.yml
