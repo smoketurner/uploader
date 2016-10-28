@@ -18,6 +18,7 @@ package com.smoketurner.uploader.core;
 import static com.codahale.metrics.MetricRegistry.name;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.event.ProgressEvent;
@@ -53,7 +54,7 @@ public class S3ProgressListener implements ProgressListener {
      * @param size
      *            Size of the upload
      */
-    public S3ProgressListener(final String key, final long start,
+    public S3ProgressListener(@Nonnull final String key, final long start,
             final int count, final int size) {
         this.key = Objects.requireNonNull(key);
         this.start = start;

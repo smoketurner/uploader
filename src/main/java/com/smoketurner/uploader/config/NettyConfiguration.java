@@ -15,18 +15,13 @@
  */
 package com.smoketurner.uploader.config;
 
-import java.io.File;
-import java.security.cert.CertificateException;
-import java.util.Collections;
-import java.util.List;
 import javax.annotation.Nonnull;
-import javax.net.ssl.SSLException;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Strings;
 import com.smoketurner.uploader.core.Uploader;
 import com.smoketurner.uploader.handler.UploadInitializer;
 import com.smoketurner.uploader.managed.ChannelFutureManager;
@@ -48,9 +43,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 
 public class NettyConfiguration {
 
@@ -73,8 +65,10 @@ public class NettyConfiguration {
     private String keyPassword;
     private String trustCertCollectionFile;
 
+    @Valid
     @NotNull
-    private List<String> ipAccessList = Collections.emptyList();
+    @JsonProperty
+    private final IpFilterConfiguration filters = new IpFilterConfiguration();
 
     @JsonProperty
     public Size getMaxLength() {
@@ -167,58 +161,17 @@ public class NettyConfiguration {
     }
 
     @JsonProperty
-    public List<String> getIpAccessList() {
-        return ipAccessList;
-    }
-
-    @JsonProperty
-    public void setIpAccessList(List<String> accessList) {
-        this.ipAccessList = accessList;
+    public IpFilterConfiguration getIpFilters() {
+        return filters;
     }
 
     @JsonIgnore
     public ChannelFuture build(@Nonnull final Environment environment,
-            @Nonnull final Uploader uploader, @Nonnull final Size maxUploadSize)
-            throws SSLException, CertificateException {
+            @Nonnull final Uploader uploader,
+            @Nonnull final Size maxUploadSize) {
 
-        // Configure SSL
-        final SslContext sslCtx;
-        if (ssl) {
-            if (selfSignedCert) {
-                LOGGER.info("SSL enabled: self-signed certificate");
-                final SelfSignedCertificate ssc = new SelfSignedCertificate();
-                sslCtx = SslContextBuilder
-                        .forServer(ssc.certificate(), ssc.privateKey()).build();
-            } else if (!Strings.isNullOrEmpty(keyCertChainFile)
-                    && !Strings.isNullOrEmpty(keyFile)) {
-
-                final SslContextBuilder builder = SslContextBuilder.forServer(
-                        new File(keyCertChainFile), new File(keyFile),
-                        keyPassword);
-                if (clientAuth
-                        && !Strings.isNullOrEmpty(trustCertCollectionFile)) {
-                    LOGGER.info(
-                            "SSL enabled: certificate chain: {}, key: {}, trust store: {}",
-                            keyCertChainFile, keyFile, trustCertCollectionFile);
-                    builder.trustManager(new File(trustCertCollectionFile));
-                } else {
-                    LOGGER.info("SSL enabled: certificate chain: {}, key: {}",
-                            keyCertChainFile, keyFile);
-                }
-                sslCtx = builder.build();
-            } else {
-                sslCtx = null;
-            }
-        } else {
-            sslCtx = null;
-        }
-
-        if (sslCtx == null) {
-            LOGGER.warn("SSL disabled");
-        }
-
-        final UploadInitializer initializer = new UploadInitializer(sslCtx,
-                uploader, this, maxUploadSize.toBytes());
+        final UploadInitializer initializer = new UploadInitializer(this,
+                uploader, maxUploadSize.toBytes());
 
         final EventLoopGroup bossGroup;
         final EventLoopGroup workerGroup;

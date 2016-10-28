@@ -15,12 +15,14 @@
  */
 package com.smoketurner.uploader.handler;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
+import com.google.common.annotations.VisibleForTesting;
 import com.smoketurner.uploader.core.Batch;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -53,15 +55,17 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        LOGGER.debug("channelActive: creating new batch");
-        curBatch.set(new Batch());
+        final String customerId = ctx.channel().attr(AuthHandler.CUSTOMER_KEY)
+                .get();
+        LOGGER.debug("channelActive: creating new batch for '{}'", customerId);
+        curBatch.set(new Batch(customerId));
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, byte[] msg)
             throws Exception {
 
-        LOGGER.trace("channelRead0: received message");
+        LOGGER.debug("channelRead0: received message: {}", new String(msg));
 
         eventMeter.mark();
 
@@ -75,7 +79,9 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
             batch.finish();
             ctx.fireChannelRead(batch);
-            curBatch.set(new Batch());
+            final String customerId = ctx.channel()
+                    .attr(AuthHandler.CUSTOMER_KEY).get();
+            curBatch.set(new Batch(customerId));
         }
     }
 
@@ -97,5 +103,10 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
             LOGGER.debug("Channel inactive, current batch is empty");
         }
         curBatch.set(null);
+    }
+
+    @VisibleForTesting
+    public Optional<Batch> getBatch() {
+        return Optional.ofNullable(curBatch.get());
     }
 }

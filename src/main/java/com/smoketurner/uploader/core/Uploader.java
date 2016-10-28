@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
 import org.joda.time.DateTime;
@@ -49,7 +48,6 @@ public class Uploader {
     private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormat
             .forPattern("yyyy/MM/dd/HH/mm/ss");
     private final AwsConfiguration configuration;
-    private final AtomicLong counter = new AtomicLong(0);
 
     // metrics
     private final Histogram batchSize;
@@ -97,12 +95,17 @@ public class Uploader {
 
         final ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentEncoding("gzip");
-        metadata.setContentType(MediaType.APPLICATION_JSON);
+        metadata.setContentType(MediaType.TEXT_PLAIN);
         metadata.setContentLength(batch.size());
         metadata.addUserMetadata("count", String.valueOf(batch.getCount()));
+        if (batch.getCustomerId().isPresent()) {
+            metadata.addUserMetadata("customer_id",
+                    batch.getCustomerId().get());
+        }
 
         final String key = generateKey();
-        LOGGER.debug("S3 key: {}", key);
+        LOGGER.debug("Customer: {}, S3 key: {}",
+                batch.getCustomerId().orElse(null), key);
 
         final S3ProgressListener listener = new S3ProgressListener(key,
                 nanoTime(), batch.getCount(), batch.size());
@@ -127,8 +130,9 @@ public class Uploader {
      * @return a generated S3 key
      */
     public String generateKey() {
+        final DateTime now = now();
         final String key = String.format("%s/events_%s.log.gz",
-                now().toString(KEY_DATE_FORMAT), counter.incrementAndGet());
+                now.toString(KEY_DATE_FORMAT), now.getMillis());
         if (configuration.getPrefix().isPresent()) {
             return String.format("%s/%s-%s", configuration.getPrefix().get(),
                     getHash(key), key);

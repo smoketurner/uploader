@@ -16,9 +16,12 @@
 package com.smoketurner.uploader.handler;
 
 import java.security.Principal;
+import java.util.Locale;
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.common.base.Strings;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -26,13 +29,15 @@ import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.AttributeKey;
 
 @Sharable
 public class AuthHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(AuthHandler.class);
-
+    public static final AttributeKey<String> CUSTOMER_KEY = AttributeKey
+            .valueOf("customer_id");
     private final boolean clientAuth;
 
     /**
@@ -48,13 +53,25 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt)
             throws Exception {
+
+        // If we are requiring mutual authentication and the SSL handshake has
+        // been completed, extract the principal from the client certificate and
+        // fire the channel active event on the batch handler to prepare an
+        // empty batch.
         if (clientAuth && evt == SslHandshakeCompletionEvent.SUCCESS) {
             final SSLSession session = ctx.pipeline().get(SslHandler.class)
                     .engine().getSession();
             final Principal principal = session.getPeerPrincipal();
             LOGGER.info("Peer Principal: {}", principal);
+
+            // removes CN= from the principal
+            final String customerId = Strings
+                    .emptyToNull(getCustomerId(principal));
+
+            ctx.channel().attr(CUSTOMER_KEY).set(customerId);
+            ctx.fireChannelActive();
         } else if (evt == IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT) {
-            LOGGER.debug("No data received on channel, closing");
+            LOGGER.warn("No data received on channel, closing");
             ctx.close();
         }
     }
@@ -63,16 +80,41 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         LOGGER.info("New connection from: <{}>",
                 ctx.channel().remoteAddress().toString());
-        ctx.fireChannelActive();
+        if (!clientAuth) {
+            // If we aren't mutually authenticating the client certificates,
+            // then immediately fire the channel active event on the batch
+            // handler to prepare a new batch. Otherwise, this is fired after
+            // the SSL handshake has been completed.
+            ctx.fireChannelActive();
+        }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (cause instanceof NotSslRecordException) {
-            LOGGER.error("Invalid SSL/TLS record, closing channel");
+            LOGGER.warn("Invalid SSL/TLS record on channel, closing");
         } else {
-            LOGGER.error("Exception occurred, closing channel", cause);
+            LOGGER.error("Exception occurred on channel, closing", cause);
         }
         ctx.close();
+    }
+
+    /**
+     * Sanitize the customer ID out of the SSL certificate principal
+     *
+     * @param principal
+     *            Principal
+     * @return customer ID or null if not found
+     */
+    private static String getCustomerId(@Nullable final Principal principal) {
+        if (principal == null) {
+            return null;
+        }
+
+        final String name = Strings.nullToEmpty(principal.getName());
+        if (name.startsWith("CN=")) {
+            return name.substring(3).trim().toLowerCase(Locale.ENGLISH);
+        }
+        return name.trim().toLowerCase(Locale.ENGLISH);
     }
 }

@@ -20,9 +20,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
+import javax.annotation.Nullable;
 
 public class Batch {
 
@@ -30,15 +32,19 @@ public class Batch {
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private final AtomicInteger eventCount = new AtomicInteger(0);
     private final AtomicBoolean finished = new AtomicBoolean(false);
+    private final String customerId;
     private final GZIPOutputStream compressor;
 
     /**
      * Constructor
      *
+     * @param customerId
+     *            Customer ID (may be null)
      * @throws IOException
      */
-    public Batch() throws IOException {
+    public Batch(@Nullable final String customerId) throws IOException {
         compressor = new GZIPOutputStream(buffer, true);
+        this.customerId = customerId;
     }
 
     public void add(final byte[] event) throws IOException {
@@ -59,6 +65,10 @@ public class Batch {
             compressor.close();
             buffer.close();
         }
+    }
+
+    public Optional<String> getCustomerId() {
+        return Optional.ofNullable(customerId);
     }
 
     public int getCount() {

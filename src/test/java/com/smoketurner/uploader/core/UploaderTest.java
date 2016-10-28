@@ -52,7 +52,7 @@ public class UploaderTest {
 
     @Test
     public void testGenerateKey() {
-        final String expected = "4-2016/12/14/16/52/13/events_1.log.gz";
+        final String expected = "e-2016/12/14/16/52/13/events_1481734333000.log.gz";
         final String actual = uploader.generateKey();
         assertThat(actual).isEqualTo(expected);
     }
@@ -60,7 +60,7 @@ public class UploaderTest {
     @Test
     public void testGenerateKeyPrefix() {
         configuration.setPrefix("events");
-        final String expected = "events/4-2016/12/14/16/52/13/events_1.log.gz";
+        final String expected = "events/e-2016/12/14/16/52/13/events_1481734333000.log.gz";
         final String actual = uploader.generateKey();
         assertThat(actual).isEqualTo(expected);
     }

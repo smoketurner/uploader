@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import org.junit.Before;
 import org.junit.Test;
-import com.smoketurner.uploader.core.Batch;
 
 public class BatchTest {
 
@@ -31,13 +30,14 @@ public class BatchTest {
 
     @Before
     public void setUp() throws Exception {
-        batch = new Batch();
+        batch = new Batch("test");
     }
 
     @Test
     public void testAdd() throws Exception {
         batch.add("test".getBytes(StandardCharsets.UTF_8));
 
+        assertThat(batch.getCustomerId().get()).isEqualTo("test");
         assertThat(batch.getCount()).isEqualTo(1);
         assertThat(batch.size()).isEqualTo(20);
         assertThat(batch.isFinished()).isFalse();
