@@ -17,6 +17,8 @@ package com.smoketurner.uploader.config;
 
 import java.io.File;
 import java.security.cert.CertificateException;
+import java.util.Collections;
+import java.util.List;
 import javax.annotation.Nonnull;
 import javax.net.ssl.SSLException;
 import javax.validation.constraints.NotNull;
@@ -24,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
 import com.smoketurner.uploader.core.Uploader;
 import com.smoketurner.uploader.handler.UploadInitializer;
 import com.smoketurner.uploader.managed.ChannelFutureManager;
@@ -64,10 +67,14 @@ public class NettyConfiguration {
 
     private boolean ssl = false;
     private boolean selfSignedCert = false;
-
+    private boolean clientAuth = false;
     private String keyCertChainFile;
-
     private String keyFile;
+    private String keyPassword;
+    private String trustCertCollectionFile;
+
+    @NotNull
+    private List<String> ipAccessList = Collections.emptyList();
 
     @JsonProperty
     public Size getMaxLength() {
@@ -89,24 +96,34 @@ public class NettyConfiguration {
         this.listenPort = listenPort;
     }
 
-    @JsonProperty("ssl")
+    @JsonProperty
     public boolean isSsl() {
         return ssl;
     }
 
-    @JsonProperty("ssl")
+    @JsonProperty
     public void setSsl(boolean ssl) {
         this.ssl = ssl;
     }
 
-    @JsonProperty("selfSignedCert")
+    @JsonProperty
     public boolean isSelfSignedCert() {
         return selfSignedCert;
     }
 
-    @JsonProperty("selfSignedCert")
+    @JsonProperty
     public void setSelfSignedCert(boolean selfSignedCert) {
         this.selfSignedCert = selfSignedCert;
+    }
+
+    @JsonProperty
+    public boolean isClientAuth() {
+        return clientAuth;
+    }
+
+    @JsonProperty
+    public void setClientAuth(boolean clientAuth) {
+        this.clientAuth = clientAuth;
     }
 
     @JsonProperty
@@ -115,8 +132,8 @@ public class NettyConfiguration {
     }
 
     @JsonProperty
-    public void setKeyCertChainFile(String keyCertChainFile) {
-        this.keyCertChainFile = keyCertChainFile;
+    public void setKeyCertChainFile(String filename) {
+        this.keyCertChainFile = filename;
     }
 
     @JsonProperty
@@ -125,8 +142,38 @@ public class NettyConfiguration {
     }
 
     @JsonProperty
-    public void setKeyFile(String keyFile) {
-        this.keyFile = keyFile;
+    public void setKeyFile(String filename) {
+        this.keyFile = filename;
+    }
+
+    @JsonProperty
+    public String getKeyPassword() {
+        return keyPassword;
+    }
+
+    @JsonProperty
+    public void setKeyPassword(String password) {
+        this.keyPassword = password;
+    }
+
+    @JsonProperty
+    public String getTrustCertCollectionFile() {
+        return trustCertCollectionFile;
+    }
+
+    @JsonProperty
+    public void setTrustCertCollectionFile(String filename) {
+        this.trustCertCollectionFile = filename;
+    }
+
+    @JsonProperty
+    public List<String> getIpAccessList() {
+        return ipAccessList;
+    }
+
+    @JsonProperty
+    public void setIpAccessList(List<String> accessList) {
+        this.ipAccessList = accessList;
     }
 
     @JsonIgnore
@@ -138,28 +185,49 @@ public class NettyConfiguration {
         final SslContext sslCtx;
         if (ssl) {
             if (selfSignedCert) {
+                LOGGER.info("SSL enabled: self-signed certificate");
                 final SelfSignedCertificate ssc = new SelfSignedCertificate();
                 sslCtx = SslContextBuilder
                         .forServer(ssc.certificate(), ssc.privateKey()).build();
+            } else if (!Strings.isNullOrEmpty(keyCertChainFile)
+                    && !Strings.isNullOrEmpty(keyFile)) {
+
+                final SslContextBuilder builder = SslContextBuilder.forServer(
+                        new File(keyCertChainFile), new File(keyFile),
+                        keyPassword);
+                if (clientAuth
+                        && !Strings.isNullOrEmpty(trustCertCollectionFile)) {
+                    LOGGER.info(
+                            "SSL enabled: certificate chain: {}, key: {}, trust store: {}",
+                            keyCertChainFile, keyFile, trustCertCollectionFile);
+                    builder.trustManager(new File(trustCertCollectionFile));
+                } else {
+                    LOGGER.info("SSL enabled: certificate chain: {}, key: {}",
+                            keyCertChainFile, keyFile);
+                }
+                sslCtx = builder.build();
             } else {
-                sslCtx = SslContextBuilder.forServer(new File(keyCertChainFile),
-                        new File(keyFile)).build();
+                sslCtx = null;
             }
         } else {
             sslCtx = null;
         }
 
+        if (sslCtx == null) {
+            LOGGER.warn("SSL disabled");
+        }
+
         final UploadInitializer initializer = new UploadInitializer(sslCtx,
-                uploader, maxLength.toBytes(), maxUploadSize.toBytes());
+                uploader, this, maxUploadSize.toBytes());
 
         final EventLoopGroup bossGroup;
         final EventLoopGroup workerGroup;
         if (Epoll.isAvailable()) {
-            LOGGER.info("Using epoll event loop");
+            LOGGER.info("Event Loop: epoll");
             bossGroup = new EpollEventLoopGroup(1);
             workerGroup = new EpollEventLoopGroup();
         } else {
-            LOGGER.info("Using NIO event loop");
+            LOGGER.info("Event Loop: NIO");
             bossGroup = new NioEventLoopGroup(1);
             workerGroup = new NioEventLoopGroup();
         }

@@ -16,8 +16,6 @@
 package com.smoketurner.uploader.handler;
 
 import java.util.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -30,8 +28,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 @Sharable
 public class UploadHandler extends SimpleChannelInboundHandler<Batch> {
 
-    private static final Logger LOGGER = LoggerFactory
-            .getLogger(UploadHandler.class);
     private final Uploader uploader;
     private final Meter batchMeter;
 
@@ -55,11 +51,5 @@ public class UploadHandler extends SimpleChannelInboundHandler<Batch> {
             throws Exception {
         batchMeter.mark();
         uploader.upload(batch);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        LOGGER.error("Handler exception", cause);
-        ctx.close();
     }
 }

@@ -16,7 +16,13 @@
 package com.smoketurner.uploader.handler;
 
 import java.util.Objects;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.net.ssl.SSLEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.google.common.primitives.Ints;
+import com.smoketurner.uploader.config.NettyConfiguration;
 import com.smoketurner.uploader.core.Uploader;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -24,12 +30,17 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 
 public class UploadInitializer extends ChannelInitializer<SocketChannel> {
 
-    private static final AuthHandler AUTH_HANDLER = new AuthHandler();
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(UploadInitializer.class);
+    private static final int READER_IDLE_SECONDS = 60;
+    private final NettyConfiguration configuration;
     private final UploadHandler uploadHandler;
+    private final AuthHandler authHandler;
     private final SslContext sslCtx;
     private final long maxLength;
     private final long maxUploadBytes;
@@ -41,29 +52,44 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
      *            SSL context
      * @param uploader
      *            AWS S3 uploader
-     * @param maxLength
-     *            Maximum line length
+     * @param configuration
+     *            Netty configuration
      * @param maxUploadBytes
      *            Maximum size of S3 upload in bytes
      */
-    public UploadInitializer(final SslContext sslCtx, final Uploader uploader,
-            final long maxLength, final long maxUploadBytes) {
+    public UploadInitializer(@Nullable final SslContext sslCtx,
+            @Nonnull final Uploader uploader,
+            @Nonnull final NettyConfiguration configuration,
+            final long maxUploadBytes) {
         this.sslCtx = sslCtx;
-        Objects.requireNonNull(uploader);
-        this.uploadHandler = new UploadHandler(uploader);
-        this.maxLength = maxLength;
+        this.configuration = Objects.requireNonNull(configuration);
+        this.maxLength = configuration.getMaxLength().toBytes();
         this.maxUploadBytes = maxUploadBytes;
+
+        // handlers
+        this.authHandler = new AuthHandler(configuration.isClientAuth());
+        this.uploadHandler = new UploadHandler(
+                Objects.requireNonNull(uploader));
     }
 
     @Override
     public void initChannel(final SocketChannel ch) throws Exception {
         final ChannelPipeline p = ch.pipeline();
         if (sslCtx != null) {
-            p.addLast("ssl", sslCtx.newHandler(ch.alloc()));
+            if (configuration.isClientAuth()) {
+                LOGGER.info("SSL: enabling client mutual authentication");
+                final SSLEngine engine = sslCtx.newEngine(ch.alloc());
+                engine.setUseClientMode(false);
+                engine.setNeedClientAuth(true);
+                p.addLast("ssl", new SslHandler(engine));
+            } else {
+                p.addLast("ssl", sslCtx.newHandler(ch.alloc()));
+            }
         }
 
-        p.addLast("idleStateHandler", new IdleStateHandler(60, 0, 0));
-        p.addLast("auth", AUTH_HANDLER);
+        p.addLast("idleStateHandler",
+                new IdleStateHandler(READER_IDLE_SECONDS, 0, 0));
+        p.addLast("auth", authHandler);
         p.addLast("line", new LineBasedFrameDecoder(Ints.checkedCast(maxLength),
                 true, true));
         p.addLast("decoder", new ByteArrayDecoder());

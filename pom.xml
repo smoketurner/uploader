@@ -28,7 +28,7 @@
         <file.encoding>UTF-8</file.encoding>
         <dropwizard.version>1.0.2</dropwizard.version>
         <netty.version>4.1.6.Final</netty.version>
-        <aws.version>1.11.41</aws.version>
+        <aws.version>1.11.48</aws.version>
         <jmh.version>1.15</jmh.version>
     </properties>
 
