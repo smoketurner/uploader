@@ -22,7 +22,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.net.HostAndPort;
 import com.smoketurner.uploader.managed.AmazonS3ClientManager;
@@ -51,6 +50,11 @@ public class AwsConfiguration {
     @MinSize(value = 1, unit = SizeUnit.KILOBYTES)
     @MaxSize(value = 50, unit = SizeUnit.MEGABYTES)
     private Size maxUploadSize = Size.megabytes(10);
+
+    @NotNull
+    @MinSize(value = 1, unit = SizeUnit.KILOBYTES)
+    @MaxSize(value = 50, unit = SizeUnit.MEGABYTES)
+    private Size minimumUploadPartSize = Size.megabytes(11);
 
     @JsonProperty
     public String getBucketName() {
@@ -88,12 +92,21 @@ public class AwsConfiguration {
     }
 
     @JsonProperty
-    public void setMaxUploadSize(Size maxUploadSize) {
-        this.maxUploadSize = maxUploadSize;
+    public void setMaxUploadSize(Size size) {
+        this.maxUploadSize = size;
     }
 
-    @JsonIgnore
-    public ClientConfiguration getClientConfiguration() {
+    @JsonProperty
+    public Size getMinimumUploadPartSize() {
+        return minimumUploadPartSize;
+    }
+
+    @JsonProperty
+    public void setMinimumUploadPartSize(Size size) {
+        this.minimumUploadPartSize = size;
+    }
+
+    private ClientConfiguration getClientConfiguration() {
         final ClientConfiguration clientConfig = new ClientConfiguration();
         if (proxy.isPresent()) {
             clientConfig.setProxyHost(proxy.get().getHostText());

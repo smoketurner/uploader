@@ -34,7 +34,6 @@ public class OptionalGzipHandler extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in,
             List<Object> out) throws Exception {
-
         // Use the first five bytes to detect gzip
         if (in.readableBytes() < 5) {
             return;

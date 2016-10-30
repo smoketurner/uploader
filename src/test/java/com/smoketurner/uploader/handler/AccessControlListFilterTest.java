@@ -16,28 +16,29 @@
 package com.smoketurner.uploader.handler;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.net.InetSocketAddress;
 import java.util.List;
 import org.junit.Test;
 import com.google.common.collect.Lists;
-import io.netty.handler.ipfilter.IpFilterRuleType;
 import io.netty.handler.ipfilter.IpSubnetFilterRule;
 
 public class AccessControlListFilterTest {
 
     @Test
     public void testGetRules() {
-        final List<String> accept = Lists.newArrayList("127.0.0.1");
-        final List<String> reject = Collections.emptyList();
+        final List<String> accept = Lists.newArrayList("127.0.0.1",
+                "10.0.0.0/8");
+        final List<String> reject = Lists.newArrayList("3.0.0.0/8");
 
         final IpSubnetFilterRule[] actual = AccessControlListFilter
                 .getRules(accept, reject);
 
-        final List<IpSubnetFilterRule> expected = new ArrayList<>();
-        expected.add(new IpSubnetFilterRule("127.0.0.1", 32,
-                IpFilterRuleType.ACCEPT));
+        assertThat(actual[0].matches(newSockAddress("127.0.0.1"))).isTrue();
+        assertThat(actual[1].matches(newSockAddress("10.57.30.10"))).isTrue();
+        assertThat(actual[2].matches(newSockAddress("3.113.4.4"))).isTrue();
+    }
 
-        assertThat(actual).isEqualTo(expected);
+    private static InetSocketAddress newSockAddress(String ipAddress) {
+        return new InetSocketAddress(ipAddress, 8080);
     }
 }

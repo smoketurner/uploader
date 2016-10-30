@@ -54,11 +54,9 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
         final ChannelFuture future = configuration.getNetty().build(environment,
                 uploader, awsConfig.getMaxUploadSize());
 
-        // Set the minimum multi-part upload size the same as the maximum upload
-        // size to skip multi-part uploads
         final TransferManagerConfiguration transferConfig = new TransferManagerConfiguration();
-        transferConfig.setMultipartUploadThreshold(
-                awsConfig.getMaxUploadSize().toBytes());
+        transferConfig.setMinimumUploadPartSize(
+                awsConfig.getMinimumUploadPartSize().toBytes());
 
         // Configure the transfer manager to use the Netty event loop
         final TransferManager transfer = new TransferManager(s3,

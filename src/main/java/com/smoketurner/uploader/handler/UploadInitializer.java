@@ -45,7 +45,6 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
     private static final int READER_IDLE_SECONDS = 60;
     private final NettyConfiguration configuration;
     private final UploadHandler uploadHandler;
-    private final AuthHandler authHandler;
     private final SslContext sslCtx;
     private final AccessControlListFilter ipFilter;
     private final long maxLength;
@@ -71,7 +70,6 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
         this.maxUploadBytes = maxUploadBytes;
 
         // handlers
-        this.authHandler = new AuthHandler(configuration.isClientAuth());
         this.uploadHandler = new UploadHandler(
                 Objects.requireNonNull(uploader));
 
@@ -88,7 +86,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
     public void initChannel(final SocketChannel ch) throws Exception {
         final ChannelPipeline p = ch.pipeline();
 
-        // add our IP ACL filter first
+        // add the IP ACL filter first
         if (ipFilter != null) {
             p.addLast("acl", ipFilter);
         }
@@ -98,20 +96,34 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
                 final SSLEngine engine = sslCtx.newEngine(ch.alloc());
                 engine.setUseClientMode(false);
                 engine.setNeedClientAuth(true);
+
                 p.addLast("ssl", new SslHandler(engine));
             } else {
                 p.addLast("ssl", sslCtx.newHandler(ch.alloc()));
             }
         }
 
+        // removes idle connections after 60s
         p.addLast("idleStateHandler",
                 new IdleStateHandler(READER_IDLE_SECONDS, 0, 0));
-        p.addLast("auth", authHandler);
+
+        // authenticate via an ACL and mutual certificates
+        p.addLast("auth", new AuthHandler(configuration.isClientAuth()));
+
+        // check to see if the data stream is gzipped or not
         p.addLast("gzipDetector", new OptionalGzipHandler());
+
+        // break each data chunk by newlines
         p.addLast("line", new LineBasedFrameDecoder(Ints.checkedCast(maxLength),
                 true, true));
+
+        // convert each data chunk into a byte array
         p.addLast("decoder", new ByteArrayDecoder());
+
+        // batch and compress chunks of data up to maxUploadBytes
         p.addLast("batcher", new BatchHandler(maxUploadBytes));
+
+        // upload the batch to S3
         p.addLast("uploader", uploadHandler);
     }
 
@@ -169,5 +181,4 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
         }
         return null;
     }
-
 }

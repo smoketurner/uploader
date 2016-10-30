@@ -15,14 +15,13 @@
  */
 package com.smoketurner.uploader.handler;
 
-import java.util.Optional;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
-import com.google.common.annotations.VisibleForTesting;
 import com.smoketurner.uploader.core.Batch;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -55,17 +54,16 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        final String customerId = ctx.channel().attr(AuthHandler.CUSTOMER_KEY)
-                .get();
-        LOGGER.debug("channelActive: creating new batch for '{}'", customerId);
-        curBatch.set(new Batch(customerId));
+        curBatch.compareAndSet(null, newBatch(ctx));
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, byte[] msg)
             throws Exception {
 
-        LOGGER.debug("channelRead0: received message: {}", new String(msg));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("channelRead0: {}", new String(msg));
+        }
 
         eventMeter.mark();
 
@@ -79,15 +77,8 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
             batch.finish();
             ctx.fireChannelRead(batch);
-            final String customerId = ctx.channel()
-                    .attr(AuthHandler.CUSTOMER_KEY).get();
-            curBatch.set(new Batch(customerId));
+            curBatch.set(newBatch(ctx));
         }
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
     }
 
     @Override
@@ -99,14 +90,17 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
                     batch.getCount());
             batch.finish();
             ctx.fireChannelRead(batch);
-        } else {
-            LOGGER.debug("Channel inactive, current batch is empty");
+        } else if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Channel inactive, current batch is empty");
         }
         curBatch.set(null);
     }
 
-    @VisibleForTesting
-    public Optional<Batch> getBatch() {
-        return Optional.ofNullable(curBatch.get());
+    private static Batch newBatch(final ChannelHandlerContext ctx)
+            throws IOException {
+        final String customerId = ctx.channel().attr(AuthHandler.CUSTOMER_KEY)
+                .get();
+        LOGGER.debug("Creating new batch for: {}", customerId);
+        return new Batch(customerId);
     }
 }

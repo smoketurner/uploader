@@ -69,7 +69,7 @@ public class AccessControlListFilter extends RuleBasedIpFilter {
             try {
                 ipf.add(convertIp(ip, IpFilterRuleType.ACCEPT));
             } catch (IllegalArgumentException e) {
-                LOGGER.warn("Invalid ACL accept IP \'{}\', ignoring", ip);
+                LOGGER.warn("Ignoring invalid ACL accept IP: {}", ip);
             }
         }
 
@@ -77,7 +77,7 @@ public class AccessControlListFilter extends RuleBasedIpFilter {
             try {
                 ipf.add(convertIp(ip, IpFilterRuleType.REJECT));
             } catch (IllegalArgumentException e) {
-                LOGGER.warn("Invalid ACL reject IP \'{}\', ignore", ip);
+                LOGGER.warn("Ignoring invalid ACL reject IP: {}", ip);
             }
         }
         return ipf.toArray(new IpSubnetFilterRule[ipf.size()]);
