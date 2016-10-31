@@ -22,7 +22,6 @@ import javax.net.ssl.SSLSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.google.common.base.Strings;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.ssl.NotSslRecordException;
@@ -31,11 +30,11 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
 
-@Sharable
 public class AuthHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(AuthHandler.class);
+    // this is public so we can access it again in the BatchHandler
     public static final AttributeKey<String> CUSTOMER_KEY = AttributeKey
             .valueOf("customer_id");
     private final boolean clientAuth;
@@ -54,49 +53,47 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt)
             throws Exception {
 
-        // If we are requiring mutual authentication and the SSL handshake has
-        // been completed, extract the principal from the client certificate and
-        // fire the channel active event on the batch handler to prepare an
-        // empty batch.
-        if (clientAuth && evt == SslHandshakeCompletionEvent.SUCCESS) {
-            final SSLSession session = ctx.pipeline().get(SslHandler.class)
-                    .engine().getSession();
-            final Principal principal = session.getPeerPrincipal();
-            LOGGER.info("Peer Principal: {}", principal);
+        LOGGER.debug("userEventTriggered: {}", evt.getClass().getName());
 
-            // removes CN= from the principal
-            final String customerId = Strings
-                    .emptyToNull(getCustomerId(principal));
-
-            ctx.channel().attr(CUSTOMER_KEY).set(customerId);
-            ctx.fireChannelActive();
-        } else if (evt == IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT) {
+        // if the channel has been idle, close it
+        if (evt == IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT) {
             LOGGER.warn("No data received on channel, closing");
             ctx.close();
+            return;
+        } else if (evt == SslHandshakeCompletionEvent.SUCCESS) {
+            // If we require mutual authentication, extract the principal from
+            // the client certificate and store it in the channel attributes.
+            if (clientAuth) {
+                final SSLSession session = ctx.pipeline().get(SslHandler.class)
+                        .engine().getSession();
+                final Principal principal = session.getPeerPrincipal();
+                LOGGER.info("Peer Principal: {}", principal);
+
+                // removes CN= from the principal
+                final String customerId = Strings
+                        .emptyToNull(getCustomerId(principal));
+
+                ctx.channel().attr(CUSTOMER_KEY).set(customerId);
+            }
         }
+        ctx.fireUserEventTriggered(evt);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         LOGGER.info("New connection from: <{}>",
                 ctx.channel().remoteAddress().toString());
-        if (!clientAuth) {
-            // If we aren't mutually authenticating the client certificates,
-            // then immediately fire the channel active event on the batch
-            // handler to prepare a new batch. Otherwise, this is fired after
-            // the SSL handshake has been completed.
-            ctx.fireChannelActive();
-        }
+        ctx.fireChannelActive();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (cause instanceof NotSslRecordException) {
             LOGGER.warn("Invalid SSL/TLS record on channel, closing");
-        } else {
-            LOGGER.error("Exception occurred on channel, closing", cause);
+            ctx.close();
+            return;
         }
-        ctx.close();
+        ctx.fireExceptionCaught(cause);
     }
 
     /**

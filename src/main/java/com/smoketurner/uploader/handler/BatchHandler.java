@@ -16,6 +16,7 @@
 package com.smoketurner.uploader.handler;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +63,8 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
             throws Exception {
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("channelRead0: {}", new String(msg));
+            LOGGER.trace("channelRead0: {}",
+                    new String(msg, StandardCharsets.UTF_8));
         }
 
         eventMeter.mark();
