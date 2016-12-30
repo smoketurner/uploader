@@ -13,3 +13,4 @@ dependency-reduced-pom.xml
 scripts/*.crt
 scripts/*.key
 scripts/*.csr
+scripts/*.jks

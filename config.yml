@@ -29,14 +29,21 @@ aws:
 
 # HTTP-specific options.
 server:
-  type: simple
-  minThreads: 1
-  applicationContextPath: /
-  connector:
-    type: http
-    port: 8080
-    acceptorThreads: 1
-    selectorThreads: 1
+  applicationConnectors:
+    - type: https
+      port: 8443
+      keyStorePath: scripts/keystore.jks
+      keyStorePassword: changeit
+      trustStorePath: scripts/truststore.jks
+      trustStorePassword: changeit
+      needClientAuth: true
+      # see https://github.com/dropwizard/dropwizard/issues/1710
+      validateCerts: false
+      validatePeers: true
+      allowRenegotiation: false
+  adminConnectors:
+    - type: http
+      port: 8180
 
   requestLog:
     appenders:

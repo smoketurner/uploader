@@ -73,7 +73,14 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
                 final Optional<String> customerId = getCustomerId(
                         session.getPeerPrincipal());
 
-                ctx.channel().attr(CUSTOMER_KEY).set(customerId.orElse(null));
+                if (!customerId.isPresent()) {
+                    LOGGER.error(
+                            "No customer ID found in certificate, closing");
+                    ctx.close();
+                    return;
+                }
+
+                ctx.channel().attr(CUSTOMER_KEY).set(customerId.get());
 
                 // notify the BatchHandler that the channel is ready and to
                 // create the empty batch
