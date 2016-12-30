@@ -9,10 +9,7 @@
 hs_err_pid*
 target
 dependency-reduced-pom.xml
-*.ovpn
-*.tfstate
 *.backup
-terraform.tfvars
-insecure-deployer*
-.ottoid
-.otto
+scripts/*.crt
+scripts/*.key
+scripts/*.csr

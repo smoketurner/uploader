@@ -26,7 +26,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 @Sharable
-public class UploadHandler extends SimpleChannelInboundHandler<Batch> {
+public final class UploadHandler extends SimpleChannelInboundHandler<Batch> {
 
     private final Uploader uploader;
     private final Meter batchMeter;

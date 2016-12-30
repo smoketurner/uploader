@@ -19,32 +19,82 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nullable;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import com.google.common.base.Strings;
+import com.google.common.primitives.Ints;
 
-public class Batch {
+public final class Batch {
 
     private static final byte[] NEWLINE = "\n".getBytes(StandardCharsets.UTF_8);
-    private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormat
+            .forPattern("yyyy/MM/dd/HH/mm/ss");
     private final AtomicInteger eventCount = new AtomicInteger(0);
     private final AtomicBoolean finished = new AtomicBoolean(false);
-    private final String customerId;
+
+    private final ByteArrayOutputStream buffer;
+    private final Optional<String> customerId;
     private final GZIPOutputStream compressor;
+    private final DateTime createdAt;
 
     /**
      * Constructor
      *
      * @param customerId
      *            Customer ID (may be null)
+     * @param size
+     *            Initial buffer size in bytes
+     * @param createdAt
+     *            Creation timestamp
      * @throws IOException
      */
-    public Batch(@Nullable final String customerId) throws IOException {
+    private Batch(@Nullable final String customerId, final int size,
+            final DateTime createdAt) throws IOException {
+        this.customerId = Optional.ofNullable(customerId);
+        this.createdAt = Objects.requireNonNull(createdAt);
+        buffer = new ByteArrayOutputStream(size);
         compressor = new GZIPOutputStream(buffer, true);
-        this.customerId = customerId;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String customerId;
+        private int size = 32;
+        private DateTime createdAt = DateTime.now(DateTimeZone.UTC);
+
+        public Builder withCustomerId(String customerId) {
+            this.customerId = customerId;
+            return this;
+        }
+
+        public Builder withSize(long size) {
+            this.size = Ints.checkedCast(size);
+            return this;
+        }
+
+        public Builder withCreatedAt(DateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Batch build() throws IOException {
+            return new Batch(customerId, size, createdAt);
+        }
     }
 
     public void add(final byte[] event) throws IOException {
@@ -68,7 +118,15 @@ public class Batch {
     }
 
     public Optional<String> getCustomerId() {
-        return Optional.ofNullable(customerId);
+        return customerId;
+    }
+
+    public String getKey() {
+        final String datePart = createdAt.toString(KEY_DATE_FORMAT);
+        final String key = String.format("%s/events_%s.log.gz", datePart,
+                createdAt.getMillis());
+        return String.format("%s/%s-%s", customerId.orElse("none"),
+                getHash(key, 1), key);
     }
 
     public int getCount() {
@@ -90,5 +148,26 @@ public class Batch {
     public InputStream getInputStream() throws IOException {
         finish();
         return new ByteArrayInputStream(buffer.toByteArray());
+    }
+
+    /**
+     * Generate a MD5 hash for a string and return the first characters,
+     * otherwise an underscore character.
+     *
+     * @param str
+     *            Key to compute the hash against
+     * @param length
+     *            Length of hash to return
+     * @return Hash character
+     */
+    public static String getHash(final String str, final int length) {
+        try {
+            final MessageDigest msg = MessageDigest.getInstance("md5");
+            msg.update(str.getBytes(StandardCharsets.UTF_8), 0, str.length());
+            return new BigInteger(1, msg.digest()).toString(16).substring(0,
+                    length);
+        } catch (NoSuchAlgorithmException ignore) {
+            return Strings.repeat("_", length);
+        }
     }
 }

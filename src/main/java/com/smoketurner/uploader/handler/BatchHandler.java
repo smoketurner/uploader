@@ -27,7 +27,7 @@ import com.smoketurner.uploader.core.Batch;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
+public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(BatchHandler.class);
@@ -98,11 +98,11 @@ public class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
         curBatch.set(null);
     }
 
-    private static Batch newBatch(final ChannelHandlerContext ctx)
-            throws IOException {
+    private Batch newBatch(final ChannelHandlerContext ctx) throws IOException {
         final String customerId = ctx.channel().attr(AuthHandler.CUSTOMER_KEY)
                 .get();
         LOGGER.debug("Creating new batch for: {}", customerId);
-        return new Batch(customerId);
+        return Batch.builder().withCustomerId(customerId)
+                .withSize(maxUploadBytes).build();
     }
 }

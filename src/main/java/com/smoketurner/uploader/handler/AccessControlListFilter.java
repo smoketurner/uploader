@@ -28,7 +28,7 @@ import io.netty.handler.ipfilter.IpFilterRuleType;
 import io.netty.handler.ipfilter.IpSubnetFilterRule;
 import io.netty.handler.ipfilter.RuleBasedIpFilter;
 
-public class AccessControlListFilter extends RuleBasedIpFilter {
+public final class AccessControlListFilter extends RuleBasedIpFilter {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(AccessControlListFilter.class);

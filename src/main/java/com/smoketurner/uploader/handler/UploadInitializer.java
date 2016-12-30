@@ -111,7 +111,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
         p.addLast("auth", new AuthHandler(configuration.isClientAuth()));
 
         // check to see if the data stream is gzipped or not
-        p.addLast("gzipDetector", new OptionalGzipHandler());
+        // p.addLast("gzipDetector", new OptionalGzipHandler());
 
         // break each data chunk by newlines
         p.addLast("line", new LineBasedFrameDecoder(Ints.checkedCast(maxLength),
@@ -134,7 +134,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
      */
     private SslContext getSslContext() {
         if (!configuration.isSsl()) {
-            LOGGER.warn("SSL disabled");
+            LOGGER.warn("SSL DISABLED");
             return null;
         }
 
@@ -143,11 +143,11 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
                 final SelfSignedCertificate ssc = new SelfSignedCertificate();
                 final SslContext sslCtx = SslContextBuilder
                         .forServer(ssc.certificate(), ssc.privateKey()).build();
-                LOGGER.info("SSL enabled: using self-signed certificate");
+                LOGGER.info("SSL ENABLED (using self-signed certificate)");
                 return sslCtx;
             } catch (CertificateException | SSLException e) {
                 LOGGER.warn(
-                        "Unable to generate self-signed certificate, SSL disabled",
+                        "SSL DISABLED: Unable to generate self-signed certificate",
                         e);
                 return null;
             }
@@ -170,13 +170,13 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
             try {
                 final SslContext sslCtx = builder.build();
                 LOGGER.info(
-                        "SSL enabled: certificate: {}, key: {}, trust store: {}",
+                        "SSL ENABLED (certificate: {}, key: {}, trust store: {})",
                         configuration.getKeyCertChainFile(),
                         configuration.getKeyFile(),
                         configuration.getTrustCertCollectionFile());
                 return sslCtx;
             } catch (SSLException e) {
-                LOGGER.error("Unable to create SSL context, SSL disabled", e);
+                LOGGER.error("SSL DISABLED: Unable to create SSL context", e);
             }
         }
         return null;

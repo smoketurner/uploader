@@ -11,16 +11,18 @@ ENV M2 $M2_HOME/bin
 ENV PATH $PATH:$M2_HOME:$M2
 
 WORKDIR /app
-COPY . .
+COPY pom.xml .
 
 RUN apk add --no-cache curl openjdk8="$JAVA_ALPINE_VERSION" && \
     curl http://mirrors.sonic.net/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz | tar -zx && \
     mv apache-maven-3.3.9 /usr/lib/mvn && \
-    # build the application into a single JAR, including dependencies
-    mvn package -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dmaven.source.skip=true && \
+    mvn install
+
+COPY . .
+
+RUN mvn package -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dmaven.source.skip=true && \
     rm target/original-*.jar && \
-    mv target/*.jar app.jar && \
-    # remove all build artifacts & dependencies, Maven, and the JDK
+    mv target/uploader-application-1.0.0-SNAPSHOT.jar app.jar && \
     rm -rf /root/.m2 && \
     rm -rf /usr/lib/mvn && \
     rm -rf target && \

@@ -17,21 +17,14 @@ package com.smoketurner.uploader.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.event.ProgressListener.ExceptionReporter;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
@@ -45,8 +38,6 @@ public class Uploader {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(Uploader.class);
-    private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormat
-            .forPattern("yyyy/MM/dd/HH/mm/ss");
     private final AwsConfiguration configuration;
 
     // metrics
@@ -103,17 +94,23 @@ public class Uploader {
                     batch.getCustomerId().get());
         }
 
-        final String key = generateKey();
+        String key = batch.getKey();
+        if (configuration.getPrefix().isPresent()) {
+            key = configuration.getPrefix().get() + "/" + key;
+        }
+
         LOGGER.debug("Customer: {}, S3 key: {}",
                 batch.getCustomerId().orElse(null), key);
 
         final S3ProgressListener listener = new S3ProgressListener(key,
                 nanoTime(), batch.getCount(), batch.size());
 
+        final ExceptionReporter reporter = ExceptionReporter.wrap(listener);
+
         try {
             final PutObjectRequest request = new PutObjectRequest(
                     configuration.getBucketName(), key, batch.getInputStream(),
-                    metadata).withGeneralProgressListener(listener);
+                    metadata).withGeneralProgressListener(reporter);
             s3.upload(request);
         } catch (AmazonServiceException e) {
             LOGGER.error("Service error uploading to S3", e);
@@ -122,45 +119,6 @@ public class Uploader {
         } catch (IOException e) {
             LOGGER.error("Error uploading batch", e);
         }
-    }
-
-    /**
-     * Generate a key for the events
-     *
-     * @return a generated S3 key
-     */
-    public String generateKey() {
-        final DateTime now = now();
-        final String key = String.format("%s/events_%s.log.gz",
-                now.toString(KEY_DATE_FORMAT), now.getMillis());
-        if (configuration.getPrefix().isPresent()) {
-            return String.format("%s/%s-%s", configuration.getPrefix().get(),
-                    getHash(key), key);
-        }
-        return String.format("%s-%s", getHash(key), key);
-    }
-
-    /**
-     * Generate a MD5 hash for a string and return the first characters,
-     * otherwise an underscore character.
-     *
-     * @param str
-     *            Key to compute the hash against
-     * @return Hash character
-     */
-    public static String getHash(final String str) {
-        try {
-            final MessageDigest msg = MessageDigest.getInstance("md5");
-            msg.update(str.getBytes(StandardCharsets.UTF_8), 0, str.length());
-            return new BigInteger(1, msg.digest()).toString(16).substring(0, 1);
-        } catch (NoSuchAlgorithmException ignore) {
-            return "_";
-        }
-    }
-
-    @VisibleForTesting
-    public DateTime now() {
-        return DateTime.now(DateTimeZone.UTC);
     }
 
     @VisibleForTesting

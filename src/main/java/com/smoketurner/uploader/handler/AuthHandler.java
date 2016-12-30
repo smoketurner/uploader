@@ -17,10 +17,13 @@ package com.smoketurner.uploader.handler;
 
 import java.security.Principal;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -30,7 +33,7 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
 
-public class AuthHandler extends ChannelInboundHandlerAdapter {
+public final class AuthHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(AuthHandler.class);
@@ -66,24 +69,30 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
             if (clientAuth) {
                 final SSLSession session = ctx.pipeline().get(SslHandler.class)
                         .engine().getSession();
-                final Principal principal = session.getPeerPrincipal();
-                LOGGER.info("Peer Principal: {}", principal);
 
-                // removes CN= from the principal
-                final String customerId = Strings
-                        .emptyToNull(getCustomerId(principal));
+                final Optional<String> customerId = getCustomerId(
+                        session.getPeerPrincipal());
 
-                ctx.channel().attr(CUSTOMER_KEY).set(customerId);
+                ctx.channel().attr(CUSTOMER_KEY).set(customerId.orElse(null));
+
+                // notify the BatchHandler that the channel is ready and to
+                // create the empty batch
+                ctx.fireChannelActive();
             }
         }
-        ctx.fireUserEventTriggered(evt);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         LOGGER.info("New connection from: <{}>",
                 ctx.channel().remoteAddress().toString());
-        ctx.fireChannelActive();
+
+        // If we are not mutually authenticating certificates, we need to fire
+        // the channel active event on the BatchHandler to create the empty
+        // batch
+        if (!clientAuth) {
+            ctx.fireChannelActive();
+        }
     }
 
     @Override
@@ -103,15 +112,26 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
      *            Principal
      * @return customer ID or null if not found
      */
-    private static String getCustomerId(@Nullable final Principal principal) {
+    public static Optional<String> getCustomerId(
+            @Nullable final Principal principal) {
         if (principal == null) {
-            return null;
+            return Optional.empty();
         }
 
+        LOGGER.debug("Peer Principal: {}", principal);
         final String name = Strings.nullToEmpty(principal.getName());
-        if (name.startsWith("CN=")) {
-            return name.substring(3).trim().toLowerCase(Locale.ENGLISH);
+        final Map<String, String> parts;
+        try {
+            parts = Splitter.on(',').omitEmptyStrings().trimResults()
+                    .withKeyValueSeparator('=').split(name);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Invalid certificate subject: " + name, e);
+            return Optional.empty();
         }
-        return name.trim().toLowerCase(Locale.ENGLISH);
+
+        if (!parts.containsKey("CN")) {
+            return Optional.empty();
+        }
+        return Optional.of(parts.get("CN").toLowerCase(Locale.ENGLISH));
     }
 }

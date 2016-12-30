@@ -2,13 +2,22 @@
 netty:
 
   # Port to listen on for new events
-  listenPort: 8888
+  listenPort: 4433
 
   # Maximum line length
   maxLength: 100KB
 
-  ssl: false
-  selfSignedCert: true
+  ssl: true
+  selfSignedCert: false
+  clientAuth: true
+  keyCertChainFile: scripts/server.crt
+  keyFile: scripts/server_pkcs8.key
+  #keyPassword: changeit
+  trustCertCollectionFile: scripts/ca.crt
+
+  filters:
+    accept:
+      - 127.0.0.1
 
 # AWS-specific options.
 aws:

@@ -21,27 +21,32 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import com.smoketurner.uploader.config.AwsConfiguration;
-import com.smoketurner.uploader.core.Uploader;
+import com.smoketurner.uploader.core.Batch;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
-public class UploaderBenchmark {
+public class BatchBenchmark {
 
-    private final Uploader uploader = new Uploader(new AwsConfiguration());
+    private Batch batch;
+
+    @Setup
+    public void setup() throws Exception {
+        batch = Batch.builder().build();
+    }
 
     @Benchmark
-    public String generateKey() {
-        return uploader.generateKey();
+    public String getKey() {
+        return batch.getKey();
     }
 
     public static void main(String[] args) throws Exception {
         new Runner(new OptionsBuilder()
-                .include(UploaderBenchmark.class.getSimpleName()).forks(1)
+                .include(BatchBenchmark.class.getSimpleName()).forks(1)
                 .warmupIterations(5).measurementIterations(5).build()).run();
     }
 }

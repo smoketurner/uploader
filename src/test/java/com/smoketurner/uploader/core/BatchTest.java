@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,7 +31,8 @@ public class BatchTest {
 
     @Before
     public void setUp() throws Exception {
-        batch = new Batch("test");
+        batch = Batch.builder().withCustomerId("test")
+                .withCreatedAt(DateTime.parse("2016-12-14T16:52:13Z")).build();
     }
 
     @Test
@@ -64,5 +66,17 @@ public class BatchTest {
                         .collect(Collectors.joining("\n"));
 
         assertThat(actual).isEqualTo("test1\ntest2\ntest3");
+    }
+
+    @Test
+    public void testGetHash() {
+        assertThat(Batch.getHash("test", 1)).isEqualTo("9");
+    }
+
+    @Test
+    public void testGetKey() {
+        final String expected = "test/e-2016/12/14/16/52/13/events_1481734333000.log.gz";
+        final String actual = batch.getKey();
+        assertThat(actual).isEqualTo(expected);
     }
 }
