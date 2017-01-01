@@ -14,3 +14,4 @@ scripts/*.crt
 scripts/*.key
 scripts/*.csr
 scripts/*.jks
+scripts/*.p12
