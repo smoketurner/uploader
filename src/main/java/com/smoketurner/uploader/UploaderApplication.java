@@ -26,6 +26,9 @@ import com.smoketurner.uploader.health.AmazonS3HealthCheck;
 import com.smoketurner.uploader.resources.PingResource;
 import com.smoketurner.uploader.resources.VersionResource;
 import io.dropwizard.Application;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.netty.channel.ChannelFuture;
 
@@ -39,6 +42,14 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
     @Override
     public String getName() {
         return "uploader";
+    }
+
+    @Override
+    public void initialize(final Bootstrap<UploaderConfiguration> bootstrap) {
+        // Enable variable substitution with environment variables
+        bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
+                bootstrap.getConfigurationSourceProvider(),
+                new EnvironmentVariableSubstitutor(false)));
     }
 
     @Override

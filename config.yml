@@ -2,7 +2,7 @@
 netty:
 
   # Port to listen on for new events
-  listenPort: 4433
+  listenPort: ${PORT:-4433}
 
   # Maximum line length
   maxLength: 100KB
