@@ -22,6 +22,7 @@ netty:
 # AWS-specific options.
 aws:
   bucketName: smoketurner-uploads
+  region: us-east-1
   prefix: events
 
   # Maximum upload size

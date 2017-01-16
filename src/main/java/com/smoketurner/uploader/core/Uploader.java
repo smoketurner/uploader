@@ -32,6 +32,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.smoketurner.uploader.config.AwsConfiguration;
 
 public class Uploader {
@@ -81,6 +82,8 @@ public class Uploader {
      *            Batch to upload
      */
     public void upload(@Nonnull final Batch batch) {
+        Preconditions.checkState(s3 != null, "TransferManager not set");
+
         batchSize.update(batch.size());
         batchCount.update(batch.getCount());
 
@@ -88,6 +91,7 @@ public class Uploader {
         metadata.setContentEncoding("gzip");
         metadata.setContentType(MediaType.TEXT_PLAIN);
         metadata.setContentLength(batch.size());
+        metadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
         metadata.addUserMetadata("count", String.valueOf(batch.getCount()));
         if (batch.getCustomerId().isPresent()) {
             metadata.addUserMetadata("customer_id",

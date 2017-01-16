@@ -23,6 +23,7 @@ import com.smoketurner.uploader.config.AwsConfiguration;
 import com.smoketurner.uploader.config.UploaderConfiguration;
 import com.smoketurner.uploader.core.Uploader;
 import com.smoketurner.uploader.health.AmazonS3HealthCheck;
+import com.smoketurner.uploader.resources.BatchResource;
 import com.smoketurner.uploader.resources.PingResource;
 import com.smoketurner.uploader.resources.VersionResource;
 import io.dropwizard.Application;
@@ -78,6 +79,7 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
         environment.healthChecks().register("s3", new AmazonS3HealthCheck(s3));
 
         // Resources
+        environment.jersey().register(new BatchResource(uploader));
         environment.jersey().register(new PingResource());
         environment.jersey().register(new VersionResource());
     }

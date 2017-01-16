@@ -19,6 +19,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import io.dropwizard.lifecycle.Managed;
 import io.netty.channel.ChannelFuture;
+import io.netty.util.concurrent.FastThreadLocal;
 
 public class ChannelFutureManager implements Managed {
 
@@ -42,5 +43,8 @@ public class ChannelFutureManager implements Managed {
     @Override
     public void stop() throws Exception {
         future.channel().closeFuture();
+        // clean up internal Netty threads
+        FastThreadLocal.removeAll();
+        FastThreadLocal.destroy();
     }
 }

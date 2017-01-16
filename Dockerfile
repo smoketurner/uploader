@@ -24,5 +24,7 @@ RUN ./mvnw package -DskipTests=true -Dmaven.javadoc.skip=true -Dmaven.source.ski
     rm -rf target && \
     apk del openjdk8
 
+EXPOSE 4433 8443 8180
+
 ENTRYPOINT ["java", "-d64", "-server", "-jar", "app.jar"]
 CMD ["server", "config.yml"]

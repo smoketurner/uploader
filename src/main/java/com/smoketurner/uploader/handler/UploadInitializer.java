@@ -35,6 +35,7 @@ import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.handler.timeout.IdleStateHandler;
 
@@ -74,7 +75,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
                 Objects.requireNonNull(uploader));
 
         // filters
-        if (configuration.getIpFilters().count() > 0) {
+        if (!configuration.getIpFilters().isEmpty()) {
             this.ipFilter = new AccessControlListFilter(
                     configuration.getIpFilters());
         } else {
@@ -134,8 +135,14 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
      */
     private SslContext getSslContext() {
         if (!configuration.isSsl()) {
-            LOGGER.warn("SSL DISABLED");
+            LOGGER.warn("SSL DISABLED: via configuration");
             return null;
+        }
+
+        if (SslContext.defaultServerProvider() == SslProvider.OPENSSL) {
+            LOGGER.info("SSL Provider: OpenSSL");
+        } else {
+            LOGGER.info("SSL Provider: JDK");
         }
 
         if (configuration.isSelfSignedCert()) {
@@ -153,31 +160,33 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
             }
         }
 
-        if (!Strings.isNullOrEmpty(configuration.getKeyCertChainFile())
-                && !Strings.isNullOrEmpty(configuration.getKeyFile())) {
+        if (Strings.isNullOrEmpty(configuration.getKeyCertChainFile())
+                || Strings.isNullOrEmpty(configuration.getKeyFile())) {
+            LOGGER.warn("SSL DISABLED: no server certificate or key provided");
+            return null;
+        }
 
-            final SslContextBuilder builder = SslContextBuilder.forServer(
-                    new File(configuration.getKeyCertChainFile()),
-                    new File(configuration.getKeyFile()),
-                    configuration.getKeyPassword());
+        final SslContextBuilder builder = SslContextBuilder.forServer(
+                new File(configuration.getKeyCertChainFile()),
+                new File(configuration.getKeyFile()),
+                configuration.getKeyPassword());
 
-            if (configuration.isClientAuth() && !Strings.isNullOrEmpty(
-                    configuration.getTrustCertCollectionFile())) {
-                builder.trustManager(
-                        new File(configuration.getTrustCertCollectionFile()));
-            }
+        if (configuration.isClientAuth() && !Strings
+                .isNullOrEmpty(configuration.getTrustCertCollectionFile())) {
+            builder.trustManager(
+                    new File(configuration.getTrustCertCollectionFile()));
+        }
 
-            try {
-                final SslContext sslCtx = builder.build();
-                LOGGER.info(
-                        "SSL ENABLED (certificate: {}, key: {}, trust store: {})",
-                        configuration.getKeyCertChainFile(),
-                        configuration.getKeyFile(),
-                        configuration.getTrustCertCollectionFile());
-                return sslCtx;
-            } catch (SSLException e) {
-                LOGGER.error("SSL DISABLED: Unable to create SSL context", e);
-            }
+        try {
+            final SslContext sslCtx = builder.build();
+            LOGGER.info(
+                    "SSL ENABLED (certificate: '{}', key: '{}', trust store: '{}')",
+                    configuration.getKeyCertChainFile(),
+                    configuration.getKeyFile(),
+                    configuration.getTrustCertCollectionFile());
+            return sslCtx;
+        } catch (SSLException e) {
+            LOGGER.error("SSL DISABLED: Unable to create SSL context", e);
         }
         return null;
     }

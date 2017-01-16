@@ -45,3 +45,6 @@ openssl req -new -subj "/CN=client1" -key client1.key -out client1.csr
 
 echo 'Generating client1 x509 certificate'
 openssl x509 -req -days 365 -sha256 -in client1.csr -CA ca.crt -CAkey ca.key -set_serial 2 -out client1.crt
+
+echo 'Generating client PKCS12 certificate'
+openssl pkcs12 -export -inkey client1.key -in client1.crt -out client1.p12 -passout pass:changeit

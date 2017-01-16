@@ -55,7 +55,7 @@ public class NettyConfiguration {
     private Size maxLength = Size.kilobytes(100);
 
     @PortRange
-    private int listenPort = 8888;
+    private int listenPort = 4433;
 
     private boolean ssl = false;
     private boolean selfSignedCert = false;
@@ -160,7 +160,7 @@ public class NettyConfiguration {
         this.trustCertCollectionFile = filename;
     }
 
-    @JsonProperty
+    @JsonProperty("filters")
     public IpFilterConfiguration getIpFilters() {
         return filters;
     }

@@ -61,4 +61,9 @@ public class IpFilterConfiguration {
     public int count() {
         return accept.size() + reject.size();
     }
+
+    @JsonIgnore
+    public boolean isEmpty() {
+        return accept.isEmpty() && reject.isEmpty();
+    }
 }

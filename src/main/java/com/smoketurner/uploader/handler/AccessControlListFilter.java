@@ -42,6 +42,9 @@ public final class AccessControlListFilter extends RuleBasedIpFilter {
     public AccessControlListFilter(
             @Nonnull final IpFilterConfiguration configuration) {
         super(getRules(configuration.getAccept(), configuration.getReject()));
+        LOGGER.info("Loaded {} IP filter(s) ({} accept, {} reject)",
+                configuration.count(), configuration.getAccept().size(),
+                configuration.getReject().size());
     }
 
     @Override
