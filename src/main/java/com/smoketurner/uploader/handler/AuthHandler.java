@@ -56,7 +56,7 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt)
             throws Exception {
 
-        LOGGER.debug("userEventTriggered: {}", evt.getClass().getName());
+        LOGGER.trace("userEventTriggered: {}", evt.getClass().getName());
 
         // if the channel has been idle, close it
         if (evt == IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT) {
@@ -104,12 +104,13 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Close the connection when an exception is raised.
         if (cause instanceof NotSslRecordException) {
-            LOGGER.warn("Invalid SSL/TLS record on channel, closing");
-            ctx.close();
-            return;
+            LOGGER.warn("Invalid SSL/TLS record on channel, closing", cause);
+        } else {
+            LOGGER.error("Uncaught exception, closing", cause);
         }
-        ctx.fireExceptionCaught(cause);
+        ctx.close();
     }
 
     /**
@@ -125,7 +126,7 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
             return Optional.empty();
         }
 
-        LOGGER.debug("Peer Principal: {}", principal);
+        LOGGER.trace("Peer Principal: {}", principal);
         final String name = Strings.nullToEmpty(principal.getName());
         final Map<String, String> parts;
         try {
