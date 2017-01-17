@@ -55,7 +55,10 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        curBatch.compareAndSet(null, newBatch(ctx));
+        final Batch batch = curBatch.get();
+        if (batch == null) {
+            curBatch.compareAndSet(null, newBatch(ctx));
+        }
     }
 
     @Override
