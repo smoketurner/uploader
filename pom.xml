@@ -7,7 +7,7 @@
 
     <groupId>com.smoketurner.uploader</groupId>
     <artifactId>uploader-application</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>uploader</name>
@@ -45,7 +45,7 @@
         <connection>scm:git:git://github.com/smoketurner/uploader.git</connection>
         <developerConnection>scm:git:git@github.com:smoketurner/uploader.git</developerConnection>
         <url>https://github.com/smoketurner/uploader</url>
-        <tag>v1.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
