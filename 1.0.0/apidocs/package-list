@@ -1,0 +1,7 @@
+com.smoketurner.uploader
+com.smoketurner.uploader.config
+com.smoketurner.uploader.core
+com.smoketurner.uploader.handler
+com.smoketurner.uploader.health
+com.smoketurner.uploader.managed
+com.smoketurner.uploader.resources
