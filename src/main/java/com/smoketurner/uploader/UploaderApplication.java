@@ -16,11 +16,12 @@
 package com.smoketurner.uploader;
 
 import javax.annotation.Nonnull;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerConfiguration;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.smoketurner.uploader.config.AwsConfiguration;
 import com.smoketurner.uploader.config.UploaderConfiguration;
+import com.smoketurner.uploader.core.NettyExecutorFactory;
 import com.smoketurner.uploader.core.Uploader;
 import com.smoketurner.uploader.health.AmazonS3HealthCheck;
 import com.smoketurner.uploader.resources.BatchResource;
@@ -59,21 +60,21 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
 
         // set up S3 client
         final AwsConfiguration awsConfig = configuration.getAws();
-        final AmazonS3Client s3 = awsConfig.buildS3(environment);
+        final AmazonS3 s3 = awsConfig.buildS3(environment);
         final Uploader uploader = new Uploader(awsConfig);
 
         // Configure the Netty TCP server
         final ChannelFuture future = configuration.getNetty().build(environment,
                 uploader, awsConfig.getMaxUploadSize());
 
-        final TransferManagerConfiguration transferConfig = new TransferManagerConfiguration();
-        transferConfig.setMinimumUploadPartSize(
-                awsConfig.getMinimumUploadPartSize().toBytes());
-
         // Configure the transfer manager to use the Netty event loop
-        final TransferManager transfer = new TransferManager(s3,
-                future.channel().eventLoop(), false);
-        transfer.setConfiguration(transferConfig);
+        final TransferManager transfer = TransferManagerBuilder.standard()
+                .withS3Client(s3)
+                .withMinimumUploadPartSize(
+                        awsConfig.getMinimumUploadPartSize().toBytes())
+                .withShutDownThreadPools(false)
+                .withExecutorFactory(new NettyExecutorFactory(future)).build();
+
         uploader.setTransferManager(transfer);
 
         environment.healthChecks().register("s3", new AmazonS3HealthCheck(s3));

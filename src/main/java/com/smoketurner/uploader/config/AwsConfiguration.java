@@ -15,12 +15,13 @@
  */
 package com.smoketurner.uploader.config;
 
-import java.util.Objects;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -29,7 +30,8 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -46,11 +48,14 @@ import io.dropwizard.validation.MinSize;
 
 public class AwsConfiguration {
 
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(AwsConfiguration.class);
+
     @NotEmpty
     private String bucketName;
 
-    @NotNull
-    private Regions region = Regions.DEFAULT_REGION;
+    @NotEmpty
+    private String region = Regions.DEFAULT_REGION.getName();
 
     private String accessKey;
 
@@ -89,12 +94,12 @@ public class AwsConfiguration {
     }
 
     @JsonProperty
-    public Regions getRegion() {
+    public String getRegion() {
         return region;
     }
 
     @JsonProperty
-    public void setRegion(Regions region) {
+    public void setRegion(String region) {
         this.region = region;
     }
 
@@ -144,8 +149,8 @@ public class AwsConfiguration {
     }
 
     @JsonProperty
-    public void setProxy(final Optional<HostAndPort> proxy) {
-        this.proxy = proxy;
+    public void setProxy(final HostAndPort proxy) {
+        this.proxy = Optional.ofNullable(proxy);
     }
 
     @JsonProperty
@@ -181,42 +186,53 @@ public class AwsConfiguration {
     }
 
     @JsonIgnore
-    public AWSCredentialsProvider getProvider() {
-        final AWSCredentialsProvider provider;
+    public AWSCredentialsProvider getCredentials() {
+        final AWSCredentialsProvider credentials;
         if (!Strings.isNullOrEmpty(accessKey)
                 && !Strings.isNullOrEmpty(secretKey)) {
-            provider = new AWSStaticCredentialsProvider(
+            credentials = new AWSStaticCredentialsProvider(
                     new BasicAWSCredentials(accessKey, secretKey));
         } else {
-            provider = new DefaultAWSCredentialsProviderChain();
+            credentials = new DefaultAWSCredentialsProviderChain();
         }
 
         if (Strings.isNullOrEmpty(stsRoleArn)) {
-            return provider;
+            return credentials;
         }
 
-        final ClientConfiguration clientConfig = getClientConfiguration();
-        final AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder
-                .standard().withCredentials(provider)
-                .withClientConfiguration(clientConfig).withRegion(region)
-                .build();
+        final AWSSecurityTokenServiceClientBuilder builder = AWSSecurityTokenServiceClientBuilder
+                .standard().withCredentials(credentials)
+                .withClientConfiguration(getClientConfiguration());
+
+        if (!Strings.isNullOrEmpty(region)) {
+            builder.withRegion(region);
+        }
+
+        final AWSSecurityTokenService stsClient = builder.build();
 
         return new STSAssumeRoleSessionCredentialsProvider.Builder(stsRoleArn,
                 "uploader").withStsClient(stsClient).build();
     }
 
     @JsonIgnore
-    public AmazonS3Client buildS3(final Environment environment) {
-        final Region region = Region.getRegion(this.region);
-        Objects.requireNonNull(region);
+    public AmazonS3 buildS3(final Environment environment) {
+        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
+                .withCredentials(getCredentials())
+                .withClientConfiguration(getClientConfiguration());
 
-        Preconditions.checkArgument(region.isServiceSupported("s3"),
-                "S3 is not supported in " + region);
+        if (!Strings.isNullOrEmpty(this.region)) {
+            final Region region = Region
+                    .getRegion(Regions.fromName(this.region));
 
-        final AWSCredentialsProvider provider = getProvider();
-        final ClientConfiguration clientConfig = getClientConfiguration();
-        final AmazonS3Client s3 = region.createClient(AmazonS3Client.class,
-                provider, clientConfig);
+            Preconditions.checkArgument(region.isServiceSupported("s3"),
+                    "S3 is not supported in " + region);
+
+            LOGGER.info("Using AWS S3 region: {}", region);
+
+            builder.withRegion(this.region);
+        }
+
+        final AmazonS3 s3 = builder.build();
         environment.lifecycle().manage(new AmazonS3ClientManager(s3));
         return s3;
     }

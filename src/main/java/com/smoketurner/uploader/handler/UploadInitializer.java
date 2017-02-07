@@ -71,8 +71,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
         this.maxUploadBytes = maxUploadBytes;
 
         // handlers
-        this.uploadHandler = new UploadHandler(
-                Objects.requireNonNull(uploader));
+        this.uploadHandler = new UploadHandler(uploader);
 
         // filters
         if (!configuration.getIpFilters().isEmpty()) {
@@ -104,7 +103,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
             }
         }
 
-        // removes idle connections after 60s
+        // removes idle connections after READER_IDLE_SECONDS seconds
         p.addLast("idleStateHandler",
                 new IdleStateHandler(READER_IDLE_SECONDS, 0, 0));
 

@@ -16,6 +16,7 @@
 package com.smoketurner.uploader.handler;
 
 import java.util.Objects;
+import javax.annotation.Nonnull;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -37,7 +38,7 @@ public final class UploadHandler extends SimpleChannelInboundHandler<Batch> {
      * @param uploader
      *            AWS S3 uploader
      */
-    public UploadHandler(final Uploader uploader) {
+    public UploadHandler(@Nonnull final Uploader uploader) {
         this.uploader = Objects.requireNonNull(uploader);
 
         final MetricRegistry registry = SharedMetricRegistries

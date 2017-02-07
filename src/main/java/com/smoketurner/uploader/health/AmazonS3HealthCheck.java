@@ -4,13 +4,13 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.Owner;
 import com.codahale.metrics.health.HealthCheck;
 
 public class AmazonS3HealthCheck extends HealthCheck {
 
-    private final AmazonS3Client s3;
+    private final AmazonS3 s3;
 
     /**
      * Constructor
@@ -18,7 +18,7 @@ public class AmazonS3HealthCheck extends HealthCheck {
      * @param s3
      *            Amazon S3 client
      */
-    public AmazonS3HealthCheck(@Nonnull final AmazonS3Client s3) {
+    public AmazonS3HealthCheck(@Nonnull final AmazonS3 s3) {
         this.s3 = Objects.requireNonNull(s3);
     }
 

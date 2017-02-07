@@ -13,35 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.smoketurner.uploader.managed;
+package com.smoketurner.uploader.core;
 
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import javax.annotation.Nonnull;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import io.dropwizard.lifecycle.Managed;
+import com.amazonaws.client.builder.ExecutorFactory;
+import io.netty.channel.ChannelFuture;
 
-public class AmazonS3ClientManager implements Managed {
+public class NettyExecutorFactory implements ExecutorFactory {
 
-    private final AmazonS3Client s3;
+    private final ChannelFuture future;
 
     /**
      * Constructor
      *
-     * @param s3
-     *            AmazonS3Client to manage
+     * @param future
+     *            ChannelFuture to get the eventloop from
      */
-    public AmazonS3ClientManager(@Nonnull final AmazonS3 s3) {
-        this.s3 = (AmazonS3Client) Objects.requireNonNull(s3);
+    public NettyExecutorFactory(@Nonnull final ChannelFuture future) {
+        this.future = Objects.requireNonNull(future);
     }
 
     @Override
-    public void start() throws Exception {
-        // nothing to start
-    }
-
-    @Override
-    public void stop() throws Exception {
-        s3.shutdown();
+    public ExecutorService newExecutor() {
+        return future.channel().eventLoop();
     }
 }
