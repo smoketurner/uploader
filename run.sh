@@ -2,4 +2,4 @@
 
 VERSION=`xmllint --xpath "//*[local-name()='project']/*[local-name()='version']/text()" pom.xml`
 
-docker build --build-arg VERSION=${VERSION} -t "smoketurner/uploader:${VERSION}" .
+docker run --rm=true -p 4433:4433 -p 8443:8443 smoketurner/uploader:${VERSION}
