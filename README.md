@@ -9,11 +9,11 @@ Uploader will listen on a TCP port (optionally using TLS) and batch and upload d
 
 Installation
 ------------
-To build this code locally, clone the repository then use [Maven](https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html) to build the jar:
+To build this code locally, clone the repository then build the jar:
 ```
 git clone https://github.com/smoketurner/uploader.git
 cd uploader
-mvn package
+./mvnw package
 java -jar target/uploader-application-1.0.1-SNAPSHOT.jar server config.yml
 ```
 
