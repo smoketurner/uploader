@@ -39,7 +39,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
-import com.smoketurner.uploader.managed.AmazonS3ClientManager;
+import com.smoketurner.uploader.managed.AmazonS3Manager;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Size;
 import io.dropwizard.util.SizeUnit;
@@ -176,10 +176,10 @@ public class AwsConfiguration {
     @JsonIgnore
     private ClientConfiguration getClientConfiguration() {
         final ClientConfiguration clientConfig = new ClientConfiguration();
-        if (proxy.isPresent()) {
-            clientConfig.setProxyHost(proxy.get().getHostText());
-            clientConfig.setProxyPort(proxy.get().getPort());
-        }
+        proxy.ifPresent(p -> {
+            clientConfig.setProxyHost(p.getHost());
+            clientConfig.setProxyPort(p.getPort());
+        });
         clientConfig.setUseTcpKeepAlive(true);
         clientConfig.setUseGzip(true);
         return clientConfig;
@@ -233,7 +233,7 @@ public class AwsConfiguration {
         }
 
         final AmazonS3 s3 = builder.build();
-        environment.lifecycle().manage(new AmazonS3ClientManager(s3));
+        environment.lifecycle().manage(new AmazonS3Manager(s3));
         return s3;
     }
 }

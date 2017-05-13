@@ -41,8 +41,7 @@ public final class UploadHandler extends SimpleChannelInboundHandler<Batch> {
     public UploadHandler(@Nonnull final Uploader uploader) {
         this.uploader = Objects.requireNonNull(uploader);
 
-        final MetricRegistry registry = SharedMetricRegistries
-                .getOrCreate("default");
+        final MetricRegistry registry = SharedMetricRegistries.getDefault();
         this.batchMeter = registry
                 .meter(MetricRegistry.name(UploadHandler.class, "batch-rate"));
     }

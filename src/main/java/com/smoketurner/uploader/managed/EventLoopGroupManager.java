@@ -16,6 +16,7 @@
 package com.smoketurner.uploader.managed;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import io.dropwizard.lifecycle.Managed;
 import io.netty.channel.EventLoopGroup;
@@ -41,6 +42,6 @@ public class EventLoopGroupManager implements Managed {
 
     @Override
     public void stop() throws Exception {
-        loop.shutdownGracefully().sync();
+        loop.shutdownGracefully(0, 0, TimeUnit.SECONDS);
     }
 }

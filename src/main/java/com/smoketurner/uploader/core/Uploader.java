@@ -57,8 +57,7 @@ public class Uploader {
     public Uploader(@Nonnull final AwsConfiguration configuration) {
         this.configuration = Objects.requireNonNull(configuration);
 
-        final MetricRegistry registry = SharedMetricRegistries
-                .getOrCreate("default");
+        final MetricRegistry registry = SharedMetricRegistries.getDefault();
 
         this.batchSize = registry.histogram(name(Uploader.class, "batch-size"));
         this.batchCount = registry
@@ -93,10 +92,8 @@ public class Uploader {
         metadata.setContentLength(batch.size());
         metadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
         metadata.addUserMetadata("count", String.valueOf(batch.getCount()));
-        if (batch.getCustomerId().isPresent()) {
-            metadata.addUserMetadata("customer_id",
-                    batch.getCustomerId().get());
-        }
+        batch.getCustomerId()
+                .ifPresent(id -> metadata.addUserMetadata("customer_id", id));
 
         String key = batch.getKey();
         if (configuration.getPrefix().isPresent()) {

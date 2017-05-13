@@ -67,7 +67,7 @@ public class BatchResource {
 
         final Batch batch;
         try {
-            batch = Batch.builder().withCustomerId(customerId.get()).build();
+            batch = Batch.create(customerId.get());
         } catch (IOException e) {
             LOGGER.error("Unable to create batch", e);
             throw new WebApplicationException("Unable to create batch", e);

@@ -61,8 +61,7 @@ public class S3ProgressListener implements ProgressListener {
         this.count = count;
         this.size = size;
 
-        final MetricRegistry registry = SharedMetricRegistries
-                .getOrCreate("default");
+        final MetricRegistry registry = SharedMetricRegistries.getDefault();
         this.uploadTime = registry
                 .timer(name(S3ProgressListener.class, "upload-time"));
         this.successCounter = registry

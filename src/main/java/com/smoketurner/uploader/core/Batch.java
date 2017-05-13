@@ -23,31 +23,30 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nullable;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Ints;
 
 public final class Batch {
 
     private static final byte[] NEWLINE = "\n".getBytes(StandardCharsets.UTF_8);
-    private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormat
-            .forPattern("yyyy/MM/dd/HH/mm/ss");
+    private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormatter
+            .ofPattern("yyyy/MM/dd/HH/mm/ss").withZone(ZoneOffset.UTC);
     private final AtomicInteger eventCount = new AtomicInteger(0);
     private final AtomicBoolean finished = new AtomicBoolean(false);
 
     private final ByteArrayOutputStream buffer;
     private final Optional<String> customerId;
     private final GZIPOutputStream compressor;
-    private final DateTime createdAt;
+    private final Instant createdAt;
 
     /**
      * Constructor
@@ -60,26 +59,28 @@ public final class Batch {
      *            Creation timestamp
      * @throws IOException
      */
-    private Batch(@Nullable final String customerId, final int size,
-            final DateTime createdAt) throws IOException {
-        this.customerId = Optional.ofNullable(customerId);
-        this.createdAt = Objects.requireNonNull(createdAt);
-        buffer = new ByteArrayOutputStream(size);
+    private Batch(final Builder builder) throws IOException {
+        this.customerId = builder.customerId;
+        this.createdAt = builder.createdAt;
+        buffer = new ByteArrayOutputStream(builder.size);
         compressor = new GZIPOutputStream(buffer, true);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Batch create(String customerId) throws IOException {
+        return builder(customerId).build();
+    }
+
+    public static Builder builder(String customerId) {
+        return new Builder(customerId);
     }
 
     public static final class Builder {
-        private String customerId;
+        private final Optional<String> customerId;
         private int size = 32;
-        private DateTime createdAt = DateTime.now(DateTimeZone.UTC);
+        private Instant createdAt = Instant.now();
 
-        public Builder withCustomerId(String customerId) {
-            this.customerId = customerId;
-            return this;
+        public Builder(@Nullable String customerId) {
+            this.customerId = Optional.ofNullable(customerId);
         }
 
         public Builder withSize(long size) {
@@ -87,13 +88,13 @@ public final class Batch {
             return this;
         }
 
-        public Builder withCreatedAt(DateTime createdAt) {
-            this.createdAt = createdAt;
+        public Builder withCreatedAt(Instant createdAt) {
+            this.createdAt = Objects.requireNonNull(createdAt);
             return this;
         }
 
         public Batch build() throws IOException {
-            return new Batch(customerId, size, createdAt);
+            return new Batch(this);
         }
     }
 
@@ -122,9 +123,9 @@ public final class Batch {
     }
 
     public String getKey() {
-        final String datePart = createdAt.toString(KEY_DATE_FORMAT);
+        final String datePart = KEY_DATE_FORMAT.format(createdAt);
         final String key = String.format("%s/events_%s.log.gz", datePart,
-                createdAt.getMillis());
+                createdAt.toEpochMilli());
         return String.format("%s/%s-%s", customerId.orElse("none"),
                 getHash(key, 1), key);
     }

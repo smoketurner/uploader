@@ -18,8 +18,6 @@ package com.smoketurner.uploader.config;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.smoketurner.uploader.core.Uploader;
@@ -36,18 +34,10 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerSocketChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
 public class NettyConfiguration {
-
-    private static final Logger LOGGER = LoggerFactory
-            .getLogger(NettyConfiguration.class);
 
     @NotNull
     @MinSize(value = 1, unit = SizeUnit.BYTES)
@@ -173,36 +163,22 @@ public class NettyConfiguration {
         final UploadInitializer initializer = new UploadInitializer(this,
                 uploader, maxUploadSize.toBytes());
 
-        final EventLoopGroup bossGroup;
-        final EventLoopGroup workerGroup;
-        if (Epoll.isAvailable()) {
-            LOGGER.info("Event Loop: epoll");
-            bossGroup = new EpollEventLoopGroup(1);
-            workerGroup = new EpollEventLoopGroup();
-        } else {
-            LOGGER.info("Event Loop: NIO");
-            bossGroup = new NioEventLoopGroup(1);
-            workerGroup = new NioEventLoopGroup();
-        }
+        final EventLoopGroup bossGroup = Netty.newBossEventLoopGroup();
+        final EventLoopGroup workerGroup = Netty.newWorkerEventLoopGroup();
 
         environment.lifecycle().manage(new EventLoopGroupManager(bossGroup));
         environment.lifecycle().manage(new EventLoopGroupManager(workerGroup));
 
         final ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(bossGroup, workerGroup)
-                .handler(new LoggingHandler(LogLevel.INFO))
-                .option(ChannelOption.SO_BACKLOG, 128)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(initializer);
-
-        if (Epoll.isAvailable()) {
-            bootstrap.channel(EpollServerSocketChannel.class);
-        } else {
-            bootstrap.channel(NioServerSocketChannel.class);
-        }
 
         // Start the server
-        final ChannelFuture future = bootstrap.bind(listenPort);
+        final ChannelFuture future = bootstrap.group(bossGroup, workerGroup)
+                .handler(new LoggingHandler(LogLevel.INFO))
+                .option(ChannelOption.SO_BACKLOG, 128)
+                .channel(Netty.serverChannelType())
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childHandler(initializer).bind(listenPort);
+
         environment.lifecycle().manage(new ChannelFutureManager(future));
         return future;
     }

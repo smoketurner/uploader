@@ -36,7 +36,7 @@ public class BatchBenchmark {
 
     @Setup
     public void setup() throws Exception {
-        batch = Batch.builder().build();
+        batch = Batch.create("test");
     }
 
     @Benchmark

@@ -18,21 +18,20 @@ package com.smoketurner.uploader.managed;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import io.dropwizard.lifecycle.Managed;
 
-public class AmazonS3ClientManager implements Managed {
+public class AmazonS3Manager implements Managed {
 
-    private final AmazonS3Client s3;
+    private final AmazonS3 s3;
 
     /**
      * Constructor
      *
      * @param s3
-     *            AmazonS3Client to manage
+     *            AmazonS3 instance to manage
      */
-    public AmazonS3ClientManager(@Nonnull final AmazonS3 s3) {
-        this.s3 = (AmazonS3Client) Objects.requireNonNull(s3);
+    public AmazonS3Manager(@Nonnull final AmazonS3 s3) {
+        this.s3 = Objects.requireNonNull(s3);
     }
 
     @Override

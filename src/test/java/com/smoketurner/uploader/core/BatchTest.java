@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,8 +31,8 @@ public class BatchTest {
 
     @Before
     public void setUp() throws Exception {
-        batch = Batch.builder().withCustomerId("test")
-                .withCreatedAt(DateTime.parse("2016-12-14T16:52:13Z")).build();
+        batch = Batch.builder("test")
+                .withCreatedAt(Instant.parse("2016-12-14T16:52:13Z")).build();
     }
 
     @Test

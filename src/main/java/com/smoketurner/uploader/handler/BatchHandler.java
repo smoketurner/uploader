@@ -105,7 +105,6 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
         final String customerId = ctx.channel().attr(AuthHandler.CUSTOMER_KEY)
                 .get();
         LOGGER.debug("Creating new batch for: {}", customerId);
-        return Batch.builder().withCustomerId(customerId)
-                .withSize(maxUploadBytes).build();
+        return Batch.builder(customerId).withSize(maxUploadBytes).build();
     }
 }
