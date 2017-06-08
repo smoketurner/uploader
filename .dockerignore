@@ -19,4 +19,3 @@ Procfile
 setup.sh
 system.properties
 Dockerfile
-terraform
