@@ -27,9 +27,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <file.encoding>UTF-8</file.encoding>
         <javadoc.doclint.none>-Xdoclint:none</javadoc.doclint.none>
-        <dropwizard.version>1.1.1</dropwizard.version>
-        <netty.version>4.1.11.Final</netty.version>
-        <aws.version>1.11.143</aws.version>
+        <dropwizard.version>1.1.2</dropwizard.version>
+        <netty.version>4.1.12.Final</netty.version>
+        <aws.version>1.11.157</aws.version>
         <jmh.version>1.19</jmh.version>
     </properties>
 

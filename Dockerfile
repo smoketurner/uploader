@@ -1,12 +1,4 @@
-FROM openjdk:8-jre-alpine
-
-ARG VERSION="1.0.0-SNAPSHOT"
-
-LABEL name="uploader" version=$VERSION
-
-ENV PORT 4433
-
-RUN apk add --no-cache curl openssl apr openjdk8="$JAVA_ALPINE_VERSION"
+FROM openjdk:8-jdk-alpine AS BUILD_IMAGE
 
 WORKDIR /app
 COPY pom.xml mvnw ./
@@ -18,10 +10,22 @@ COPY . .
 
 RUN ./mvnw clean package -DskipTests=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true && \
     rm target/original-*.jar && \
-    mv target/*.jar app.jar && \
-    rm -rf /root/.m2 && \
-    rm -rf target && \
-    apk del openjdk8
+    mv target/*.jar app.jar
+
+FROM openjdk:8-jre-alpine
+
+ARG VERSION="1.0.0-SNAPSHOT"
+
+LABEL name="uploader" version=$VERSION
+
+ENV PORT 4433
+
+RUN apk add --no-cache curl openssl apr
+
+WORKDIR /app
+COPY --from=BUILD_IMAGE /app/app.jar .
+COPY --from=BUILD_IMAGE /app/config.yml .
+COPY --from=BUILD_IMAGE /app/scripts/* ./scripts/
 
 HEALTHCHECK --interval=10s --timeout=5s CMD curl --fail http://127.0.0.1:8180/healthcheck || exit 1
 
