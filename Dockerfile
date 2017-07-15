@@ -8,7 +8,7 @@ RUN ./mvnw install
 
 COPY . .
 
-RUN ./mvnw clean package -DskipTests=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true && \
+RUN ./mvnw package -DskipTests=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true && \
     rm target/original-*.jar && \
     mv target/*.jar app.jar
 
