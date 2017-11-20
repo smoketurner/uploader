@@ -253,7 +253,7 @@
                             <compilerArgs>
                                 <arg>-XepDisableWarningsInGeneratedCode</arg>
                                 <arg>-Xep:NullAway:ERROR</arg>
-                                <arg>-XepOpt:NullAway:AnnotatedPackages=com.smoketurner.dropwizard.riak</arg>
+                                <arg>-XepOpt:NullAway:AnnotatedPackages=com.smoketurner.uploader</arg>
                             </compilerArgs>
                         </configuration>
                         <dependencies>
