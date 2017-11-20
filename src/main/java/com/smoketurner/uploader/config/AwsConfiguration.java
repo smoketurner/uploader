@@ -53,7 +53,7 @@ public class AwsConfiguration {
             .getLogger(AwsConfiguration.class);
 
     @NotEmpty
-    private String bucketName;
+    private String bucketName = "";
 
     @NotEmpty
     private String region = Regions.DEFAULT_REGION.getName();
