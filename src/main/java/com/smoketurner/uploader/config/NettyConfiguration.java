@@ -16,6 +16,7 @@
 package com.smoketurner.uploader.config;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -50,9 +51,17 @@ public class NettyConfiguration {
     private boolean ssl = false;
     private boolean selfSignedCert = false;
     private boolean clientAuth = false;
+
+    @Nullable
     private String keyCertChainFile;
+
+    @Nullable
     private String keyFile;
+
+    @Nullable
     private String keyPassword;
+
+    @Nullable
     private String trustCertCollectionFile;
 
     @Valid
@@ -110,43 +119,47 @@ public class NettyConfiguration {
         this.clientAuth = clientAuth;
     }
 
+    @Nullable
     @JsonProperty
     public String getKeyCertChainFile() {
         return keyCertChainFile;
     }
 
     @JsonProperty
-    public void setKeyCertChainFile(String filename) {
+    public void setKeyCertChainFile(@Nullable String filename) {
         this.keyCertChainFile = filename;
     }
 
+    @Nullable
     @JsonProperty
     public String getKeyFile() {
         return keyFile;
     }
 
     @JsonProperty
-    public void setKeyFile(String filename) {
+    public void setKeyFile(@Nullable String filename) {
         this.keyFile = filename;
     }
 
+    @Nullable
     @JsonProperty
     public String getKeyPassword() {
         return keyPassword;
     }
 
     @JsonProperty
-    public void setKeyPassword(String password) {
+    public void setKeyPassword(@Nullable String password) {
         this.keyPassword = password;
     }
 
+    @Nullable
     @JsonProperty
     public String getTrustCertCollectionFile() {
         return trustCertCollectionFile;
     }
 
     @JsonProperty
-    public void setTrustCertCollectionFile(String filename) {
+    public void setTrustCertCollectionFile(@Nullable String filename) {
         this.trustCertCollectionFile = filename;
     }
 
