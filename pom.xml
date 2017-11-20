@@ -28,8 +28,8 @@
         <file.encoding>UTF-8</file.encoding>
         <javadoc.doclint.none>-Xdoclint:none</javadoc.doclint.none>
         <dropwizard.version>1.2.0</dropwizard.version>
-        <netty.version>4.1.16.Final</netty.version>
-        <aws.version>1.11.210</aws.version>
+        <netty.version>4.1.17.Final</netty.version>
+        <aws.version>1.11.232</aws.version>
         <jmh.version>1.19</jmh.version>
     </properties>
 
@@ -132,7 +132,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative</artifactId>
-            <version>2.0.6.Final</version>
+            <version>2.0.7.Final</version>
             <classifier>${os.detected.classifier}</classifier>
         </dependency>
         <dependency>
@@ -196,9 +196,221 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>compile-eclipse</id>
+            <activation>
+                <jdk>1.8</jdk>
+                <property>
+                    <name>m2e.version</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                            <optimize>true</optimize>
+                            <debug>true</debug>
+                            <showWarnings>true</showWarnings>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>compile-not-eclipse</id>
+            <activation>
+                <jdk>1.8</jdk>
+                <property>
+                    <name>!m2e.version</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                            <optimize>true</optimize>
+                            <debug>true</debug>
+                            <compilerId>javac-with-errorprone</compilerId>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <showWarnings>true</showWarnings>
+                            <fork>true</fork>
+                            <annotationProcessorPaths>
+                                <!-- enable extended nullability checks -->
+                                <path>
+                                    <groupId>com.uber.nullaway</groupId>
+                                    <artifactId>nullaway</artifactId>
+                                    <version>0.1.7</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>-XepDisableWarningsInGeneratedCode</arg>
+                                <arg>-Xep:NullAway:ERROR</arg>
+                                <arg>-XepOpt:NullAway:AnnotatedPackages=com.smoketurner.dropwizard.riak</arg>
+                            </compilerArgs>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.codehaus.plexus</groupId>
+                                <artifactId>plexus-compiler-javac-errorprone</artifactId>
+                                <version>2.8.2</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>com.google.errorprone</groupId>
+                                <artifactId>error_prone_core</artifactId>
+                                <version>2.1.2</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jdk9</id>
+            <activation>
+                <jdk>9</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>9</source>
+                            <target>9</target>
+                            <optimize>true</optimize>
+                            <debug>true</debug>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <showWarnings>true</showWarnings>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>--add-modules java.xml.bind</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
+      <pluginManagement>
+          <plugins>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-deploy-plugin</artifactId>
+                  <version>2.8.2</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>3.7.0</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-surefire-plugin</artifactId>
+                  <version>2.20.1</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-failsafe-plugin</artifactId>
+                  <version>2.20.1</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-enforcer-plugin</artifactId>
+                  <version>3.0.0-M1</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-source-plugin</artifactId>
+                  <version>3.0.1</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-javadoc-plugin</artifactId>
+                  <version>3.0.0-M1</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-release-plugin</artifactId>
+                  <version>2.5.3</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-clean-plugin</artifactId>
+                  <version>3.0.0</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-install-plugin</artifactId>
+                  <version>2.5.2</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-resources-plugin</artifactId>
+                  <version>3.0.2</version>
+                  <dependencies>
+                      <dependency>
+                          <groupId>org.apache.maven.shared</groupId>
+                          <artifactId>maven-filtering</artifactId>
+                          <version>3.1.1</version>
+                      </dependency>
+                  </dependencies>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-jar-plugin</artifactId>
+                  <version>3.0.2</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-site-plugin</artifactId>
+                  <version>3.6</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>cobertura-maven-plugin</artifactId>
+                  <version>2.7</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.eluder.coveralls</groupId>
+                  <artifactId>coveralls-maven-plugin</artifactId>
+                  <version>4.3.0</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-project-info-reports-plugin</artifactId>
+                  <version>2.9</version>
+              </plugin>
+              <plugin>
+                  <groupId>com.github.github</groupId>
+                  <artifactId>site-maven-plugin</artifactId>
+                  <version>0.12</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.xolstice.maven.plugins</groupId>
+                  <artifactId>protobuf-maven-plugin</artifactId>
+                  <version>0.5.0</version>
+              </plugin>
+              <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-shade-plugin</artifactId>
+                  <version>3.1.0</version>
+              </plugin>
+          </plugins>
+      </pluginManagement>
+
         <extensions>
             <extension>
                 <groupId>kr.motd.maven</groupId>
@@ -209,33 +421,7 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <optimize>true</optimize>
-                    <compilerId>javac-with-errorprone</compilerId>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <showWarnings>true</showWarnings>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-compiler-javac-errorprone</artifactId>
-                        <version>2.8.2</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>com.google.errorprone</groupId>
-                        <artifactId>error_prone_core</artifactId>
-                        <version>2.1.1</version>
-                    </dependency>
-               </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.20.1</version>
                 <configuration>
                     <excludes>
                         <exclude>**/*IT.java</exclude>
@@ -245,7 +431,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.20.1</version>
                 <configuration>
                     <excludes>
                         <exclude>**/*Test.java</exclude>
@@ -263,7 +448,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -276,7 +460,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.0.1</version>
                 <configuration>
                     <outputDirectory />
                     <encoding>UTF-8</encoding>
@@ -285,7 +468,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.0-M1</version>
                 <configuration>
                     <additionalparam>${javadoc.doclint.none}</additionalparam>
                 </configuration>
@@ -301,7 +483,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -313,7 +494,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.5.3</version>
                 <configuration>
                     <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
@@ -325,7 +505,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.5.1</version>
                 <configuration>
                     <skipDeploy>true</skipDeploy>
                 </configuration>
@@ -333,7 +512,6 @@
             <plugin>
                 <groupId>com.github.github</groupId>
                 <artifactId>site-maven-plugin</artifactId>
-                <version>0.12</version>
                 <configuration>
                     <path>${project.distributionManagement.site.url}</path>
                     <message>Creating site for ${project.name} ${project.version}</message>
@@ -352,7 +530,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
-                <version>2.7</version>
                 <configuration>
                     <formats>
                         <format>xml</format>
@@ -363,24 +540,10 @@
             <plugin>
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
-                <version>4.3.0</version>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.5</version>
-                <configuration>
-                    <effort>Max</effort>
-                    <threshold>Default</threshold>
-                    <onlyAnalyze>com.smoketurner.uploader.*</onlyAnalyze>
-                    <xmlOutput>true</xmlOutput>
-                    <excludeFilterFile>${basedir}/findbugs-exclude.xml</excludeFilterFile>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4.1</version>
                 <executions>
                     <execution>
                         <id>enforce</id>
@@ -398,7 +561,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.1.0</version>
                 <configuration>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <filters>
@@ -431,12 +593,12 @@
             </plugin>
         </plugins>
     </build>
+
     <reporting>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.9</version>
                 <configuration>
                     <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
                     <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
@@ -463,7 +625,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.0-M1</version>
                 <configuration>
                     <additionalparam>${javadoc.doclint.none}</additionalparam>
                     <quiet>true</quiet>
