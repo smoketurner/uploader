@@ -140,6 +140,6 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
         if (!parts.containsKey("CN")) {
             return Optional.empty();
         }
-        return Optional.of(parts.get("CN").toLowerCase(Locale.ENGLISH));
+        return Optional.ofNullable(parts.get("CN").toLowerCase(Locale.ENGLISH));
     }
 }
