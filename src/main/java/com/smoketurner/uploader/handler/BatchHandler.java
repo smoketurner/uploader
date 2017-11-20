@@ -47,8 +47,7 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
     public BatchHandler(final long maxUploadBytes) {
         this.maxUploadBytes = maxUploadBytes;
 
-        final MetricRegistry registry = SharedMetricRegistries
-                .getOrCreate("default");
+        final MetricRegistry registry = SharedMetricRegistries.getDefault();
         this.eventMeter = registry
                 .meter(MetricRegistry.name(BatchHandler.class, "event-rate"));
     }
