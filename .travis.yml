@@ -1,9 +1,8 @@
 sudo: false
 dist: trusty
 language: java
-jdk:
-  - oraclejdk8
 before_install:
+  - ulimit -c unlimited -S
   - mvn -N io.takari:maven:wrapper
 after_success:
   - bash .travis_after_success.sh
@@ -11,13 +10,24 @@ cache:
   directories:
     - $HOME/.m2
 
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
+matrix:
+  include:
+    - os: linux
+      jdk: oraclejdk8
+      addons:
+        apt:
+          packages:
+            - oracle-java8-installer
+    - os: linux
+      jdk: oraclejdk9
+      addons:
+        apt:
+          packages:
+            - oracle-java9-installer
 
 env:
   global:
+    # CI_DEPLOY_USERNAME
     - secure: "P11oQlmw949WLXnbPAmypFDKdfibtcCZD/XzTO0yQS03kvQG3IRsHNgcASlw9Ahb0eUNWz28yhrzFIS9hBz2GvtPkV6skStk0cGvJ/tiNIDViETuf4ML2z4GlWlCaEy/szZUBl3IL7j5/nTrgdWuEompVkSafWPlfQQfWDXSlNr2CxYevizkV5HIUDshlgDD2AYvZqLlBp9k8/tjPSREPFn1Z1cp4tppM4Lpe7mKlLWoRjomDMlCnnvzxh5ybQxN+cRf6hNke5go2MLccPoA+Va9p23xse5oU4v/RYaNaECdEaaJ/lf7x29mLc41DM2fjsrWJhsn4YFCQGX5fUmJs5mwrQOSWBNS50plpkZJB4lemsRgV4QC0Z19IPnO+a4PnoRxybk5GNmWJEn4XcIVdyZHAVw8S+3nQ072fGqY33Ada9PCQ3ImQlReJ4DZrA80JVpSM5M+fPZJbqoC+rCEC1valpXLm/OdLTi/L1MB6yqWvn6qclHy3KaTwmJfnTWlKD+Nt4pY7oRwuO8yX9FUyp8GNuef6XU7T0NXErTOfuDL59HdFEp72oiHmXzcw3/SNSOkmOgZCro05pVDnPCbt9veG3atcFjgSpRbuVV2Df4R3FHA7NLQJH6AXp5RWqCpw8cT2SAi+jgWCP6r+0uoTSx5jRtvb0LV77qW1LXxNPA="
+    # CI_DEPLOY_PASSWORD
     - secure: "yU/zZtotGJrrOZK+VeQSWF8sNJ12RFubjnbw7H7DrxJko9lMEoPtm9U3AhzVcSJaMqmzRDa/H5BWU7arIdvd8P3vHpWRM06txspOCO1HJtODfHvPI3LHd5r68IHxom2piI6pDonJYsoYB+DpG1OEKNK3i7bNILxwGzNA5n8Ef1GQHbdZpoJR9DSE0Lk42xhXTTYdF9+duel10ifrzaobJ0TiJZvJqiAuWKmaZatGDPB8WmuAspRvXHuufsVgemwDm47fPxAbqr+spXjD0GqZyCmNTJ1wgCq7lvM6qFb1QpQLLsclLgrZiJimms/bJTufbD2aMKwmLJjh+XN8Tl9EGQVDRjKuPaJ/Qs25MP+es89CJWLtaGFKg+jIK71L29YQPYHbHb5nCG5yRIrX6ZMxYJ8IM9nUgM7uE2QOcmmFlNELyc33+kyJtmNEnvz0mpJ7Q+cZ5pnrD3MbtfR7iOZHWDkhS7YsDchXiNxBN7ppRboWTPS40HQD0IE0i9EQvcuR0mNUWIdAvLZvj2MZFbecePjbsXIueqk0CvBT++QkW6uLcFw/njzzKjL+dBhTJ6h0w4rBMhHSX1/wgaeqJV3xdSCd+RrMnpSOcglPPSPgXMAzwTO9IrF1z9O5fsSMIZsvIYoddcwlO2uzRAwV3NfDqvSuf7d9Pqor2lhsLulhCnM="
-    
