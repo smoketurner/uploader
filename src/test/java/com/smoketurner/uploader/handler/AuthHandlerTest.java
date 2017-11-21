@@ -18,6 +18,7 @@ package com.smoketurner.uploader.handler;
 import static org.assertj.core.api.Assertions.assertThat;
 import java.security.Principal;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.junit.Test;
 
 public class AuthHandlerTest {
@@ -33,6 +34,7 @@ public class AuthHandlerTest {
         final Optional<String> actual = AuthHandler
                 .getCustomerId(new Principal() {
                     @Override
+                    @Nullable
                     public String getName() {
                         return null;
                     }
