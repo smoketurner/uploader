@@ -18,6 +18,7 @@ package com.smoketurner.uploader.handler;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
@@ -54,10 +55,7 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        final Batch batch = curBatch.get();
-        if (batch == null) {
-            curBatch.compareAndSet(null, newBatch(ctx));
-        }
+        curBatch.compareAndSet(null, newBatch(ctx));
     }
 
     @Override
@@ -71,7 +69,12 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
         eventMeter.mark();
 
-        final Batch batch = curBatch.get();
+        final Batch batch = getBatch(ctx);
+        if (batch == null) {
+            LOGGER.warn("Batch is null");
+            return;
+        }
+
         batch.add(msg);
 
         if (batch.size() > maxUploadBytes) {
@@ -98,6 +101,20 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
             LOGGER.trace("Channel inactive, current batch is empty");
         }
         curBatch.set(null);
+    }
+
+    @Nullable
+    private Batch getBatch(final ChannelHandlerContext ctx) throws IOException {
+        final Batch batch = curBatch.get();
+        if (batch != null) {
+            return batch;
+        }
+
+        final Batch newBatch = newBatch(ctx);
+        if (curBatch.compareAndSet(null, newBatch)) {
+            return newBatch;
+        }
+        return curBatch.get();
     }
 
     private Batch newBatch(final ChannelHandlerContext ctx) throws IOException {
