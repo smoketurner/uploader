@@ -16,6 +16,7 @@
 package com.smoketurner.uploader.config;
 
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -52,15 +53,18 @@ public class AwsConfiguration {
             .getLogger(AwsConfiguration.class);
 
     @NotEmpty
-    private String bucketName;
+    private String bucketName = "";
 
     @NotEmpty
     private String region = Regions.DEFAULT_REGION.getName();
 
+    @Nullable
     private String accessKey;
 
+    @Nullable
     private String secretKey;
 
+    @Nullable
     private String stsRoleArn;
 
     @NotNull
@@ -103,33 +107,36 @@ public class AwsConfiguration {
         this.region = region;
     }
 
+    @Nullable
     @JsonProperty
     public String getAccessKey() {
         return accessKey;
     }
 
     @JsonProperty
-    public void setAcccessKey(String key) {
+    public void setAcccessKey(@Nullable String key) {
         this.accessKey = key;
     }
 
+    @Nullable
     @JsonProperty
     public String getSecretKey() {
         return secretKey;
     }
 
     @JsonProperty
-    public void setSecretKey(String key) {
+    public void setSecretKey(@Nullable String key) {
         this.secretKey = key;
     }
 
+    @Nullable
     @JsonProperty
     public String getStsRoleArn() {
         return stsRoleArn;
     }
 
     @JsonProperty
-    public void setStsRoleArn(String arn) {
+    public void setStsRoleArn(@Nullable String arn) {
         this.stsRoleArn = arn;
     }
 

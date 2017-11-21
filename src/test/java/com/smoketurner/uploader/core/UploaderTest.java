@@ -15,10 +15,8 @@
  */
 package com.smoketurner.uploader.core;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import org.junit.Before;
-import org.junit.Test;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -30,20 +28,11 @@ public class UploaderTest {
     private final AwsConfiguration configuration = new AwsConfiguration();
     private final MetricRegistry registry = SharedMetricRegistries
             .setDefault("default", new MetricRegistry());
-    private final Uploader uploader = new Uploader(configuration) {
-        @Override
-        public long nanoTime() {
-            return 10000L;
-        }
-    };
+    private final Uploader uploader = new Uploader(configuration);
 
     @Before
     public void setUp() {
         uploader.setTransferManager(s3);
-    }
-
-    @Test
-    public void testNanoTime() {
-        assertThat(uploader.nanoTime()).isEqualTo(10000L);
+        uploader.setCurrentTimeProvider(() -> 10000L);
     }
 }

@@ -254,6 +254,7 @@
                                 <arg>-XepDisableWarningsInGeneratedCode</arg>
                                 <arg>-Xep:NullAway:ERROR</arg>
                                 <arg>-XepOpt:NullAway:AnnotatedPackages=com.smoketurner.uploader</arg>
+                                <arg>-XepOpt:NullAway:UnannotatedSubPackages=com.smoketurner.uploader.benchmarks</arg>
                             </compilerArgs>
                         </configuration>
                         <dependencies>

@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.smoketurner.uploader.config.IpFilterConfiguration;
@@ -47,6 +48,7 @@ public final class AccessControlListFilter extends RuleBasedIpFilter {
                 configuration.getReject().size());
     }
 
+    @Nullable
     @Override
     protected ChannelFuture channelRejected(ChannelHandlerContext ctx,
             InetSocketAddress remoteAddress) {

@@ -18,6 +18,7 @@ package com.smoketurner.uploader.core;
 import static com.codahale.metrics.MetricRegistry.name;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import com.amazonaws.event.ProgressListener.ExceptionReporter;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -46,7 +48,10 @@ public class Uploader {
     private final Histogram batchCount;
 
     // this isn't set in the constructor so we can configure the executor
-    private TransferManager s3;
+    private TransferManager s3 = TransferManagerBuilder
+            .defaultTransferManager();
+
+    private Supplier<Long> currentTimeProvider = System::nanoTime;
 
     /**
      * Constructor
@@ -104,7 +109,7 @@ public class Uploader {
                 batch.getCustomerId().orElse(null), key);
 
         final S3ProgressListener listener = new S3ProgressListener(key,
-                nanoTime(), batch.getCount(), batch.size());
+                currentTimeProvider.get(), batch.getCount(), batch.size());
 
         final ExceptionReporter reporter = ExceptionReporter.wrap(listener);
 
@@ -123,7 +128,7 @@ public class Uploader {
     }
 
     @VisibleForTesting
-    public long nanoTime() {
-        return System.nanoTime();
+    void setCurrentTimeProvider(Supplier<Long> provider) {
+        this.currentTimeProvider = provider;
     }
 }

@@ -19,6 +19,7 @@ import java.io.File;
 import java.security.cert.CertificateException;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import org.slf4j.Logger;
@@ -46,8 +47,13 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
     private static final int READER_IDLE_SECONDS = 60;
     private final NettyConfiguration configuration;
     private final UploadHandler uploadHandler;
+
+    @Nullable
     private final SslContext sslCtx;
+
+    @Nullable
     private final AccessControlListFilter ipFilter;
+
     private final long maxLength;
     private final long maxUploadBytes;
 
@@ -132,6 +138,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
      *
      * @return SslContext or null
      */
+    @Nullable
     private SslContext getSslContext() {
         if (!configuration.isSsl()) {
             LOGGER.warn("SSL DISABLED: via configuration");

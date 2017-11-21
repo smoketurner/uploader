@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -77,7 +78,7 @@ public final class Batch {
     public static final class Builder {
         private final Optional<String> customerId;
         private int size = 32;
-        private Instant createdAt = Instant.now();
+        private Instant createdAt = Instant.now(Clock.systemUTC());
 
         public Builder(@Nullable String customerId) {
             this.customerId = Optional.ofNullable(customerId);
