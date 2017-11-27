@@ -18,16 +18,12 @@ package com.smoketurner.uploader.core;
 import static org.mockito.Mockito.mock;
 import org.junit.Before;
 import com.amazonaws.services.s3.transfer.TransferManager;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
 import com.smoketurner.uploader.config.AwsConfiguration;
 
 public class UploaderTest {
 
     private final TransferManager s3 = mock(TransferManager.class);
     private final AwsConfiguration configuration = new AwsConfiguration();
-    private final MetricRegistry registry = SharedMetricRegistries
-            .setDefault("default", new MetricRegistry());
     private final Uploader uploader = new Uploader(configuration);
 
     @Before
