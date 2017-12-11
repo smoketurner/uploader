@@ -1,5 +1,7 @@
 FROM openjdk:8-jdk-alpine AS BUILD_IMAGE
 
+RUN apk add --no-cache curl openssl apr
+
 WORKDIR /app
 COPY pom.xml mvnw ./
 COPY .mvn ./.mvn/
