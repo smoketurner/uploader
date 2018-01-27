@@ -27,10 +27,10 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <file.encoding>UTF-8</file.encoding>
         <javadoc.doclint.none>-Xdoclint:none</javadoc.doclint.none>
-        <dropwizard.version>1.2.2</dropwizard.version>
-        <netty.version>4.1.18.Final</netty.version>
-        <aws.version>1.11.245</aws.version>
-        <jmh.version>1.19</jmh.version>
+        <dropwizard.version>1.2.3</dropwizard.version>
+        <netty.version>4.1.20.Final</netty.version>
+        <aws.version>1.11.271</aws.version>
+        <jmh.version>1.20</jmh.version>
     </properties>
 
     <developers>
