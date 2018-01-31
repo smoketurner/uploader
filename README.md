@@ -4,7 +4,7 @@ Uploader
 [![Coverage Status](https://coveralls.io/repos/smoketurner/uploader/badge.svg)](https://coveralls.io/r/smoketurner/uploader)
 [![Maven Central](https://img.shields.io/maven-central/v/com.smoketurner.uploader/uploader-application.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.smoketurner.uploader/uploader-application/)
 [![GitHub license](https://img.shields.io/github/license/smoketurner/uploader.svg?style=flat-square)](https://github.com/smoketurner/uploader/tree/master)
-[![Become a Patron](https://img.shields.io/badge/Patron-Patreon-red.svg)](https://www.patreon.com/jplock)
+[![Become a Patron](https://img.shields.io/badge/Patron-Patreon-red.svg)](https://www.patreon.com/bePatron?u=9567343)
 
 Uploader will listen on a TCP port (optionally using TLS) and batch and upload data to AWS S3. Data received will be split in newlines and then batched together, compressed and uploaded.
 
