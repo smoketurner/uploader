@@ -23,29 +23,28 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
+import com.smoketurner.uploader.health.AmazonS3HealthCheck;
 import com.smoketurner.uploader.managed.AmazonS3Manager;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Size;
 import io.dropwizard.util.SizeUnit;
 import io.dropwizard.validation.MaxSize;
 import io.dropwizard.validation.MinSize;
+import software.amazon.awssdk.core.auth.AwsCredentials;
+import software.amazon.awssdk.core.auth.AwsCredentialsProvider;
+import software.amazon.awssdk.core.auth.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.auth.StaticCredentialsProvider;
+import software.amazon.awssdk.core.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.regions.Region;
+import software.amazon.awssdk.services.s3.BucketUtils;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.STSClient;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 public class AwsConfiguration {
 
@@ -55,8 +54,8 @@ public class AwsConfiguration {
     @NotEmpty
     private String bucketName = "";
 
-    @NotEmpty
-    private String region = Regions.DEFAULT_REGION.getName();
+    @NotNull
+    private Region region = Region.US_WEST_2;
 
     @Nullable
     private String accessKey;
@@ -82,11 +81,6 @@ public class AwsConfiguration {
     @MaxSize(value = 50, unit = SizeUnit.MEGABYTES)
     private Size maxUploadSize = Size.megabytes(10);
 
-    @NotNull
-    @MinSize(value = 1, unit = SizeUnit.KILOBYTES)
-    @MaxSize(value = 50, unit = SizeUnit.MEGABYTES)
-    private Size minimumUploadPartSize = Size.megabytes(11);
-
     @JsonProperty
     public String getBucketName() {
         return bucketName;
@@ -94,17 +88,18 @@ public class AwsConfiguration {
 
     @JsonProperty
     public void setBucketName(String bucketName) {
+        BucketUtils.isValidDnsBucketName(bucketName, true);
         this.bucketName = bucketName;
     }
 
     @JsonProperty
-    public String getRegion() {
+    public Region getRegion() {
         return region;
     }
 
     @JsonProperty
     public void setRegion(String region) {
-        this.region = region;
+        this.region = Region.of(region);
     }
 
     @Nullable
@@ -170,77 +165,55 @@ public class AwsConfiguration {
         this.maxUploadSize = size;
     }
 
-    @JsonProperty
-    public Size getMinimumUploadPartSize() {
-        return minimumUploadPartSize;
-    }
-
-    @JsonProperty
-    public void setMinimumUploadPartSize(Size size) {
-        this.minimumUploadPartSize = size;
-    }
-
     @JsonIgnore
-    private ClientConfiguration getClientConfiguration() {
-        final ClientConfiguration clientConfig = new ClientConfiguration();
-        proxy.ifPresent(p -> {
-            clientConfig.setProxyHost(p.getHost());
-            clientConfig.setProxyPort(p.getPort());
-        });
-        clientConfig.setUseTcpKeepAlive(true);
-        clientConfig.setUseGzip(true);
+    private ClientOverrideConfiguration getClientConfiguration() {
+        final ClientOverrideConfiguration clientConfig = ClientOverrideConfiguration
+                .builder().gzipEnabled(true).build();
+        /*
+         * proxy.ifPresent(p -> { clientConfig.setProxyHost(p.getHost());
+         * clientConfig.setProxyPort(p.getPort()); });
+         */
         return clientConfig;
     }
 
     @JsonIgnore
-    public AWSCredentialsProvider getCredentials() {
-        final AWSCredentialsProvider credentials;
+    public AwsCredentialsProvider getCredentials() {
+        final AwsCredentialsProvider credentials;
         if (!Strings.isNullOrEmpty(accessKey)
                 && !Strings.isNullOrEmpty(secretKey)) {
-            credentials = new AWSStaticCredentialsProvider(
-                    new BasicAWSCredentials(accessKey, secretKey));
+            credentials = StaticCredentialsProvider
+                    .create(AwsCredentials.create(accessKey, secretKey));
         } else {
-            credentials = new DefaultAWSCredentialsProviderChain();
+            credentials = DefaultCredentialsProvider.create();
         }
 
         if (Strings.isNullOrEmpty(stsRoleArn)) {
             return credentials;
         }
 
-        final AWSSecurityTokenServiceClientBuilder builder = AWSSecurityTokenServiceClientBuilder
-                .standard().withCredentials(credentials)
-                .withClientConfiguration(getClientConfiguration());
+        final STSClient stsClient = STSClient.builder()
+                .credentialsProvider(credentials).region(region)
+                .overrideConfiguration(getClientConfiguration()).build();
 
-        if (!Strings.isNullOrEmpty(region)) {
-            builder.withRegion(region);
-        }
+        final AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
+                .roleArn("uploader").build();
 
-        final AWSSecurityTokenService stsClient = builder.build();
-
-        return new STSAssumeRoleSessionCredentialsProvider.Builder(stsRoleArn,
-                "uploader").withStsClient(stsClient).build();
+        return StsAssumeRoleCredentialsProvider.builder().stsClient(stsClient)
+                .refreshRequest(assumeRoleRequest).build();
     }
 
     @JsonIgnore
-    public AmazonS3 buildS3(final Environment environment) {
-        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
-                .withCredentials(getCredentials())
-                .withClientConfiguration(getClientConfiguration());
+    public S3Client buildS3(final Environment environment) {
+        LOGGER.info("Using AWS S3 region: {}", region);
 
-        if (!Strings.isNullOrEmpty(this.region)) {
-            final Region region = Region
-                    .getRegion(Regions.fromName(this.region));
+        final S3Client s3 = S3Client.builder()
+                .credentialsProvider(getCredentials())
+                .overrideConfiguration(getClientConfiguration())
+                .region(getRegion()).build();
 
-            Preconditions.checkArgument(region.isServiceSupported("s3"),
-                    "S3 is not supported in " + region);
-
-            LOGGER.info("Using AWS S3 region: {}", region);
-
-            builder.withRegion(this.region);
-        }
-
-        final AmazonS3 s3 = builder.build();
         environment.lifecycle().manage(new AmazonS3Manager(s3));
+        environment.healthChecks().register("s3",
+                new AmazonS3HealthCheck(s3, bucketName));
         return s3;
     }
 }

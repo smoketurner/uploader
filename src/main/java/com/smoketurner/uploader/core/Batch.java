@@ -135,7 +135,7 @@ public final class Batch {
         return eventCount.get();
     }
 
-    public int size() {
+    public long size() {
         return buffer.size();
     }
 

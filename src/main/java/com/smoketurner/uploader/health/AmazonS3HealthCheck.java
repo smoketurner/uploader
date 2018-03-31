@@ -2,36 +2,34 @@ package com.smoketurner.uploader.health;
 
 import java.util.Objects;
 import javax.annotation.Nonnull;
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.Owner;
 import com.codahale.metrics.health.HealthCheck;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 
 public class AmazonS3HealthCheck extends HealthCheck {
 
-    private final AmazonS3 s3;
+    private final S3Client s3;
+    private final String bucket;
 
     /**
      * Constructor
      *
      * @param s3
      *            Amazon S3 client
+     * @param bucker
+     *            S3 bucket name
      */
-    public AmazonS3HealthCheck(@Nonnull final AmazonS3 s3) {
+    public AmazonS3HealthCheck(@Nonnull final S3Client s3,
+            @Nonnull final String bucket) {
         this.s3 = Objects.requireNonNull(s3);
+        this.bucket = Objects.requireNonNull(bucket);
     }
 
     @Override
     protected Result check() throws Exception {
-        final Owner owner;
-        try {
-            owner = s3.getS3AccountOwner();
-        } catch (AmazonServiceException e) {
-            return Result.unhealthy(e);
-        } catch (AmazonClientException e) {
-            return Result.unhealthy(e);
-        }
-        return Result.healthy(owner.toString());
+        final HeadBucketRequest request = HeadBucketRequest.builder()
+                .bucket(bucket).build();
+        s3.headBucket(request);
+        return Result.healthy();
     }
 }
