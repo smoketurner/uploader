@@ -54,11 +54,6 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        curBatch.compareAndSet(null, newBatch(ctx));
-    }
-
-    @Override
     public void channelRead0(ChannelHandlerContext ctx, byte[] msg)
             throws Exception {
 
@@ -71,7 +66,7 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
 
         final Batch batch = getBatch(ctx);
         if (batch == null) {
-            LOGGER.warn("Batch is null");
+            LOGGER.warn("channelRead0: batch is null");
             return;
         }
 
