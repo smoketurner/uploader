@@ -39,21 +39,21 @@ public class Netty {
         }
     }
 
-    static EventLoopGroup newBossEventLoopGroup() {
+    public static EventLoopGroup newBossEventLoopGroup() {
         if (Epoll.isAvailable()) {
             return new EpollEventLoopGroup(1);
         }
         return new NioEventLoopGroup(1);
     }
 
-    static EventLoopGroup newWorkerEventLoopGroup() {
+    public static EventLoopGroup newWorkerEventLoopGroup() {
         if (Epoll.isAvailable()) {
             return new EpollEventLoopGroup(WORKER_THREADS);
         }
         return new NioEventLoopGroup(WORKER_THREADS);
     }
 
-    static Class<? extends ServerChannel> serverChannelType() {
+    public static Class<? extends ServerChannel> serverChannelType() {
         if (Epoll.isAvailable()) {
             return EpollServerSocketChannel.class;
         }

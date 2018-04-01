@@ -16,10 +16,9 @@
 package com.smoketurner.uploader.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
@@ -35,10 +34,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.smoketurner.uploader.config.AwsConfiguration;
 import io.dropwizard.util.Duration;
-import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 
 public class Uploader {
@@ -48,7 +46,7 @@ public class Uploader {
     private static final long NANOS_IN_MILLIS = Duration.milliseconds(1)
             .toNanoseconds();
 
-    private final S3Client s3;
+    private final S3AsyncClient s3;
     private final AwsConfiguration configuration;
 
     // metrics
@@ -68,7 +66,7 @@ public class Uploader {
      * @param configuration
      *            AWS configuration
      */
-    public Uploader(@Nonnull final S3Client s3,
+    public Uploader(@Nonnull final S3AsyncClient s3,
             @Nonnull final AwsConfiguration configuration) {
         this.s3 = Objects.requireNonNull(s3);
         this.configuration = Objects.requireNonNull(configuration);
@@ -86,7 +84,7 @@ public class Uploader {
     }
 
     /**
-     * Upload a batch to S3 using the TransferManager
+     * Upload a batch to S3
      * 
      * @param batch
      *            Batch to upload
@@ -101,9 +99,11 @@ public class Uploader {
         batch.getCustomerId().ifPresent(id -> builder.put("customer_id", id));
         final Map<String, String> metadata = builder.build();
 
-        String key = batch.getKey();
+        final String key;
         if (configuration.getPrefix().isPresent()) {
-            key = configuration.getPrefix().get() + "/" + key;
+            key = configuration.getPrefix().get() + "/" + batch.getKey();
+        } else {
+            key = batch.getKey();
         }
 
         LOGGER.debug("Customer: {}, S3 key: {}",
@@ -116,26 +116,27 @@ public class Uploader {
                 .serverSideEncryption(ServerSideEncryption.AES256).build();
 
         final long start = currentTimeProvider.get();
-        try (final InputStream input = batch.getInputStream()) {
-            s3.putObject(request, RequestBody.of(input, batch.size()));
 
-            final long took = currentTimeProvider.get() - start;
+        final CompletableFuture<PutObjectResponse> future = s3
+                .putObject(request, new BatchRequestProvider(batch));
+        future.whenComplete((resp, err) -> {
+            if (resp != null) {
+                final long took = currentTimeProvider.get() - start;
 
-            uploadTime.update(took, TimeUnit.NANOSECONDS);
-            successCounter.inc();
+                uploadTime.update(took, TimeUnit.NANOSECONDS);
+                successCounter.inc();
 
-            LOGGER.info(
-                    "Finished uploading \"{}\" ({} events, {} bytes) in {}ms",
-                    key, batch.getCount(), batch.size(),
-                    (took / NANOS_IN_MILLIS));
+                LOGGER.info(
+                        "Finished uploading \"{}\" ({} events, {} bytes) in {}ms",
+                        key, batch.getCount(), batch.size(),
+                        (took / NANOS_IN_MILLIS));
+            } else {
+                failedCounter.inc();
+                LOGGER.error(String.format("Failed to upload \"%s\"", key),
+                        err);
+            }
+        });
 
-        } catch (SdkException e) {
-            LOGGER.error(String.format("Failed to upload \"%s\"", key), e);
-            failedCounter.inc();
-        } catch (IOException e) {
-            LOGGER.error(String.format("Failed to upload \"%s\"", key), e);
-            failedCounter.inc();
-        }
     }
 
     @VisibleForTesting

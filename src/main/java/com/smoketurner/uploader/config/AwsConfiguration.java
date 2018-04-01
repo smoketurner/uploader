@@ -21,15 +21,10 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
-import com.smoketurner.uploader.health.AmazonS3HealthCheck;
-import com.smoketurner.uploader.managed.AmazonS3Manager;
-import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Size;
 import io.dropwizard.util.SizeUnit;
 import io.dropwizard.validation.MaxSize;
@@ -38,24 +33,19 @@ import software.amazon.awssdk.core.auth.AwsCredentials;
 import software.amazon.awssdk.core.auth.AwsCredentialsProvider;
 import software.amazon.awssdk.core.auth.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.auth.StaticCredentialsProvider;
-import software.amazon.awssdk.core.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.regions.Region;
 import software.amazon.awssdk.services.s3.BucketUtils;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.STSClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 public class AwsConfiguration {
 
-    private static final Logger LOGGER = LoggerFactory
-            .getLogger(AwsConfiguration.class);
-
     @NotEmpty
     private String bucketName = "";
 
     @NotNull
-    private Region region = Region.US_WEST_2;
+    private Region region = Region.US_EAST_1;
 
     @Nullable
     private String accessKey;
@@ -166,17 +156,6 @@ public class AwsConfiguration {
     }
 
     @JsonIgnore
-    private ClientOverrideConfiguration getClientConfiguration() {
-        final ClientOverrideConfiguration clientConfig = ClientOverrideConfiguration
-                .builder().gzipEnabled(true).build();
-        /*
-         * proxy.ifPresent(p -> { clientConfig.setProxyHost(p.getHost());
-         * clientConfig.setProxyPort(p.getPort()); });
-         */
-        return clientConfig;
-    }
-
-    @JsonIgnore
     public AwsCredentialsProvider getCredentials() {
         final AwsCredentialsProvider credentials;
         if (!Strings.isNullOrEmpty(accessKey)
@@ -192,28 +171,12 @@ public class AwsConfiguration {
         }
 
         final STSClient stsClient = STSClient.builder()
-                .credentialsProvider(credentials).region(region)
-                .overrideConfiguration(getClientConfiguration()).build();
+                .credentialsProvider(credentials).region(region).build();
 
         final AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
-                .roleArn("uploader").build();
+                .roleArn(stsRoleArn).build();
 
         return StsAssumeRoleCredentialsProvider.builder().stsClient(stsClient)
                 .refreshRequest(assumeRoleRequest).build();
-    }
-
-    @JsonIgnore
-    public S3Client buildS3(final Environment environment) {
-        LOGGER.info("Using AWS S3 region: {}", region);
-
-        final S3Client s3 = S3Client.builder()
-                .credentialsProvider(getCredentials())
-                .overrideConfiguration(getClientConfiguration())
-                .region(getRegion()).build();
-
-        environment.lifecycle().manage(new AmazonS3Manager(s3));
-        environment.healthChecks().register("s3",
-                new AmazonS3HealthCheck(s3, bucketName));
-        return s3;
     }
 }

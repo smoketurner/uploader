@@ -17,18 +17,17 @@ package com.smoketurner.uploader.core;
 
 import static org.mockito.Mockito.mock;
 import org.junit.Before;
-import com.amazonaws.services.s3.transfer.TransferManager;
 import com.smoketurner.uploader.config.AwsConfiguration;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 public class UploaderTest {
 
-    private final TransferManager s3 = mock(TransferManager.class);
+    private final S3AsyncClient mockS3 = mock(S3AsyncClient.class);
     private final AwsConfiguration configuration = new AwsConfiguration();
-    private final Uploader uploader = new Uploader(configuration);
+    private final Uploader uploader = new Uploader(mockS3, configuration);
 
     @Before
     public void setUp() {
-        uploader.setTransferManager(s3);
         uploader.setCurrentTimeProvider(() -> 10000L);
     }
 }
