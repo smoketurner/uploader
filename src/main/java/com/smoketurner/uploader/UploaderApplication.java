@@ -24,6 +24,7 @@ import com.smoketurner.uploader.core.Uploader;
 import com.smoketurner.uploader.handler.UploadInitializer;
 import com.smoketurner.uploader.managed.ChannelFutureManager;
 import com.smoketurner.uploader.managed.EventLoopGroupManager;
+import com.smoketurner.uploader.resources.BatchResource;
 import com.smoketurner.uploader.resources.PingResource;
 import com.smoketurner.uploader.resources.VersionResource;
 import io.dropwizard.Application;
@@ -115,6 +116,7 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
         environment.lifecycle().manage(new ChannelFutureManager(future));
 
         // Resources
+        environment.jersey().register(new BatchResource(uploader));
         environment.jersey().register(new PingResource());
         environment.jersey().register(new VersionResource());
     }
