@@ -29,7 +29,7 @@
         <javadoc.doclint.none>-Xdoclint:none</javadoc.doclint.none>
         <dropwizard.version>1.3.0</dropwizard.version>
         <netty.version>4.1.22.Final</netty.version>
-        <aws.version>1.11.294</aws.version>
+        <aws.version>2.0.0-preview-9</aws.version>
         <jmh.version>1.20</jmh.version>
     </properties>
 
@@ -100,11 +100,16 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-bom</artifactId>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
                 <version>${aws.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>1.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -132,7 +137,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative</artifactId>
-            <version>2.0.7.Final</version>
+            <version>2.0.8.Final</version>
             <classifier>${os.detected.classifier}</classifier>
         </dependency>
         <dependency>
@@ -143,12 +148,16 @@
             <classifier>linux-x86_64</classifier>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sts</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>netty-nio-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
@@ -247,7 +256,7 @@
                                 <path>
                                     <groupId>com.uber.nullaway</groupId>
                                     <artifactId>nullaway</artifactId>
-                                    <version>0.3.5</version>
+                                    <version>0.4.1</version>
                                 </path>
                             </annotationProcessorPaths>
                             <compilerArgs>
@@ -273,9 +282,9 @@
             </build>
         </profile>
         <profile>
-            <id>jdk9</id>
+            <id>jdk10</id>
             <activation>
-                <jdk>9</jdk>
+                <jdk>10</jdk>
             </activation>
             <build>
                 <plugins>
@@ -283,8 +292,8 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <source>9</source>
-                            <target>9</target>
+                            <source>10</source>
+                            <target>10</target>
                             <optimize>true</optimize>
                             <debug>true</debug>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>

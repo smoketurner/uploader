@@ -15,28 +15,15 @@
  */
 package com.smoketurner.uploader.config;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.smoketurner.uploader.core.Uploader;
-import com.smoketurner.uploader.handler.UploadInitializer;
-import com.smoketurner.uploader.managed.ChannelFutureManager;
-import com.smoketurner.uploader.managed.EventLoopGroupManager;
-import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Size;
 import io.dropwizard.util.SizeUnit;
 import io.dropwizard.validation.MaxSize;
 import io.dropwizard.validation.MinSize;
 import io.dropwizard.validation.PortRange;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 
 public class NettyConfiguration {
 
@@ -166,33 +153,5 @@ public class NettyConfiguration {
     @JsonProperty("filters")
     public IpFilterConfiguration getIpFilters() {
         return filters;
-    }
-
-    @JsonIgnore
-    public ChannelFuture build(@Nonnull final Environment environment,
-            @Nonnull final Uploader uploader,
-            @Nonnull final Size maxUploadSize) {
-
-        final UploadInitializer initializer = new UploadInitializer(this,
-                uploader, maxUploadSize.toBytes());
-
-        final EventLoopGroup bossGroup = Netty.newBossEventLoopGroup();
-        final EventLoopGroup workerGroup = Netty.newWorkerEventLoopGroup();
-
-        environment.lifecycle().manage(new EventLoopGroupManager(bossGroup));
-        environment.lifecycle().manage(new EventLoopGroupManager(workerGroup));
-
-        final ServerBootstrap bootstrap = new ServerBootstrap();
-
-        // Start the server
-        final ChannelFuture future = bootstrap.group(bossGroup, workerGroup)
-                .handler(new LoggingHandler(LogLevel.INFO))
-                .option(ChannelOption.SO_BACKLOG, 128)
-                .channel(Netty.serverChannelType())
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(initializer).bind(listenPort);
-
-        environment.lifecycle().manage(new ChannelFutureManager(future));
-        return future;
     }
 }

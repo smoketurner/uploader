@@ -15,10 +15,8 @@
  */
 package com.smoketurner.uploader.core;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -33,14 +31,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Ints;
 
 public final class Batch {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Batch.class);
     private static final byte[] NEWLINE = "\n".getBytes(StandardCharsets.UTF_8);
     private static final DateTimeFormatter KEY_DATE_FORMAT = DateTimeFormatter
             .ofPattern("yyyy/MM/dd/HH/mm/ss").withZone(ZoneOffset.UTC);
+
     private final AtomicInteger eventCount = new AtomicInteger(0);
     private final AtomicBoolean finished = new AtomicBoolean(false);
 
@@ -112,10 +114,14 @@ public final class Batch {
         compressor.flush();
     }
 
-    public void finish() throws IOException {
+    public void finish() {
         if (finished.compareAndSet(false, true)) {
-            compressor.close();
-            buffer.close();
+            try {
+                compressor.close();
+                buffer.close();
+            } catch (IOException e) {
+                LOGGER.error("Unable to close compression stream", e);
+            }
         }
     }
 
@@ -135,7 +141,7 @@ public final class Batch {
         return eventCount.get();
     }
 
-    public int size() {
+    public long size() {
         return buffer.size();
     }
 
@@ -147,9 +153,9 @@ public final class Batch {
         return finished.get();
     }
 
-    public InputStream getInputStream() throws IOException {
+    public byte[] toByteArray() {
         finish();
-        return new ByteArrayInputStream(buffer.toByteArray());
+        return buffer.toByteArray();
     }
 
     /**

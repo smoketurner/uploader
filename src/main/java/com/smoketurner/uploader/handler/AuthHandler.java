@@ -27,6 +27,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
@@ -81,10 +82,6 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
                 }
 
                 ctx.channel().attr(CUSTOMER_KEY).set(customerId.get());
-
-                // notify the BatchHandler that the channel is ready and to
-                // create the empty batch
-                ctx.fireChannelActive();
             }
         }
     }
@@ -93,13 +90,6 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         LOGGER.info("New connection from: <{}>",
                 ctx.channel().remoteAddress().toString());
-
-        // If we are not mutually authenticating certificates, we need to fire
-        // the channel active event on the BatchHandler to create the empty
-        // batch
-        if (!clientAuth) {
-            ctx.fireChannelActive();
-        }
     }
 
     @Override
@@ -107,8 +97,11 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
         // Close the connection when an exception is raised.
         if (cause instanceof NotSslRecordException) {
             LOGGER.warn("Invalid SSL/TLS record on channel, closing", cause);
+        } else if (cause instanceof DecoderException) {
+            LOGGER.warn("Invalid SSL/TLS record on channel, closing", cause);
         } else {
-            LOGGER.error("Uncaught exception, closing", cause);
+            LOGGER.error(String.format("Uncaught exception, closing (%s)",
+                    cause.getClass()), cause);
         }
         ctx.close();
     }
