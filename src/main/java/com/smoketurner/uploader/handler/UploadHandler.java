@@ -1,11 +1,11 @@
-/**
- * Copyright 2018 Smoke Turner, LLC.
+/*
+ * Copyright © 2018 Smoke Turner, LLC (contact@smoketurner.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,8 +15,6 @@
  */
 package com.smoketurner.uploader.handler;
 
-import java.util.Objects;
-import javax.annotation.Nonnull;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -25,31 +23,30 @@ import com.smoketurner.uploader.core.Uploader;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import java.util.Objects;
+import javax.annotation.Nonnull;
 
 @Sharable
 public final class UploadHandler extends SimpleChannelInboundHandler<Batch> {
 
-    private final Uploader uploader;
-    private final Meter batchMeter;
+  private final Uploader uploader;
+  private final Meter batchMeter;
 
-    /**
-     * Constructor
-     *
-     * @param uploader
-     *            AWS S3 uploader
-     */
-    public UploadHandler(@Nonnull final Uploader uploader) {
-        this.uploader = Objects.requireNonNull(uploader);
+  /**
+   * Constructor
+   *
+   * @param uploader AWS S3 uploader
+   */
+  public UploadHandler(@Nonnull final Uploader uploader) {
+    this.uploader = Objects.requireNonNull(uploader);
 
-        final MetricRegistry registry = SharedMetricRegistries.getDefault();
-        this.batchMeter = registry
-                .meter(MetricRegistry.name(UploadHandler.class, "batch-rate"));
-    }
+    final MetricRegistry registry = SharedMetricRegistries.getDefault();
+    this.batchMeter = registry.meter(MetricRegistry.name(UploadHandler.class, "batch-rate"));
+  }
 
-    @Override
-    public void channelRead0(ChannelHandlerContext ctx, Batch batch)
-            throws Exception {
-        batchMeter.mark();
-        uploader.upload(batch);
-    }
+  @Override
+  public void channelRead0(ChannelHandlerContext ctx, Batch batch) throws Exception {
+    batchMeter.mark();
+    uploader.upload(batch);
+  }
 }
