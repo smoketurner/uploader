@@ -1,7 +1,11 @@
 sudo: false
 dist: trusty
 language: java
+jdk:
+  - openjdk10
+  - oraclejdk10
 before_install:
+  - rm ~/.m2/settings.xml || true 
   - ulimit -c unlimited -S
   - mvn -N io.takari:maven:wrapper
 after_success:
@@ -9,21 +13,6 @@ after_success:
 cache:
   directories:
     - $HOME/.m2
-
-matrix:
-  include:
-    - os: linux
-      jdk: oraclejdk8
-      addons:
-        apt:
-          packages:
-            - oracle-java8-installer
-    - os: linux
-      jdk: oraclejdk9
-      addons:
-        apt:
-          packages:
-            - oracle-java9-installer
 
 env:
   global:
