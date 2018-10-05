@@ -39,7 +39,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import javax.annotation.Nonnull;
 import software.amazon.awssdk.core.client.builder.ClientAsyncHttpConfiguration;
 import software.amazon.awssdk.http.nio.netty.EventLoopGroupConfiguration;
 import software.amazon.awssdk.http.nio.netty.NettySdkHttpClientFactory;
@@ -66,8 +65,7 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
   }
 
   @Override
-  public void run(
-      @Nonnull final UploaderConfiguration configuration, @Nonnull final Environment environment)
+  public void run(final UploaderConfiguration configuration, final Environment environment)
       throws Exception {
 
     final NettyConfiguration nettyConfig = configuration.getNetty();
