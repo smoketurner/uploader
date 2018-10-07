@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM openjdk:8-jdk-alpine AS BUILD_IMAGE
+FROM openjdk:11-jdk-slim AS BUILD_IMAGE
 
 RUN apk add --no-cache curl openssl apr
 
@@ -30,7 +30,7 @@ RUN ./mvnw package -DskipTests=true -Dmaven.javadoc.skip=true -Dmaven.source.ski
     rm target/original-*.jar && \
     mv target/*.jar app.jar
 
-FROM openjdk:8-jre-alpine
+FROM openjdk:11-jre-slim
 
 ARG VERSION="1.0.0-SNAPSHOT"
 
