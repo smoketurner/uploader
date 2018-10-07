@@ -16,7 +16,6 @@
 package com.smoketurner.uploader.core;
 
 import com.google.common.base.Strings;
-import com.google.common.primitives.Ints;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -84,7 +83,7 @@ public final class Batch {
     }
 
     public Builder withSize(long size) {
-      this.size = Ints.checkedCast(size);
+      this.size = Math.toIntExact(size);
       return this;
     }
 

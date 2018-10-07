@@ -24,7 +24,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 @Sharable
 public final class UploadHandler extends SimpleChannelInboundHandler<Batch> {
@@ -37,7 +36,7 @@ public final class UploadHandler extends SimpleChannelInboundHandler<Batch> {
    *
    * @param uploader AWS S3 uploader
    */
-  public UploadHandler(@Nonnull final Uploader uploader) {
+  public UploadHandler(final Uploader uploader) {
     this.uploader = Objects.requireNonNull(uploader);
 
     final MetricRegistry registry = SharedMetricRegistries.getDefault();

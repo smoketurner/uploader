@@ -33,7 +33,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import java.io.File;
 import java.security.cert.CertificateException;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -62,9 +61,7 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
    * @param maxUploadBytes Maximum size of S3 upload in bytes
    */
   public UploadInitializer(
-      @Nonnull final NettyConfiguration configuration,
-      @Nonnull final Uploader uploader,
-      final long maxUploadBytes) {
+      final NettyConfiguration configuration, final Uploader uploader, final long maxUploadBytes) {
 
     this.configuration = Objects.requireNonNull(configuration);
     this.sslCtx = getSslContext();

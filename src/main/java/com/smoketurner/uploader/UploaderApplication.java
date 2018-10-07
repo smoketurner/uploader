@@ -39,9 +39,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import software.amazon.awssdk.core.client.builder.ClientAsyncHttpConfiguration;
-import software.amazon.awssdk.http.nio.netty.EventLoopGroupConfiguration;
-import software.amazon.awssdk.http.nio.netty.NettySdkHttpClientFactory;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 public class UploaderApplication extends Application<UploaderConfiguration> {
@@ -82,12 +81,10 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
 
     final Size maxUploadSize = awsConfig.getMaxUploadSize();
 
-    final EventLoopGroupConfiguration eventLoopConfig =
-        EventLoopGroupConfiguration.builder().eventLoopGroup(workerGroup).build();
-    final NettySdkHttpClientFactory nettyFactory =
-        NettySdkHttpClientFactory.builder().eventLoopGroupConfiguration(eventLoopConfig).build();
-    final ClientAsyncHttpConfiguration httpConfig =
-        ClientAsyncHttpConfiguration.builder().httpClientFactory(nettyFactory).build();
+    final ClientAsyncConfiguration asyncConfig =
+        ClientAsyncConfiguration.builder()
+            .advancedOption(SdkAdvancedAsyncClientOption.FUTURE_COMPLETION_EXECUTOR, workerGroup)
+            .build();
 
     // build the asynchronous S3 client with the configured credentials
     // provider and region and use the same Netty event group as the server.
@@ -95,7 +92,7 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
         S3AsyncClient.builder()
             .credentialsProvider(awsConfig.getCredentials())
             .region(awsConfig.getRegion())
-            .asyncHttpConfiguration(httpConfig)
+            .asyncConfiguration(asyncConfig)
             .build();
     environment.lifecycle().manage(new AutoCloseableManager(s3));
 

@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +62,7 @@ public class Uploader {
    * @param s3 S3 client
    * @param configuration AWS configuration
    */
-  public Uploader(@Nonnull final S3AsyncClient s3, @Nonnull final AwsConfiguration configuration) {
+  public Uploader(final S3AsyncClient s3, final AwsConfiguration configuration) {
     this.s3 = Objects.requireNonNull(s3);
     this.configuration = Objects.requireNonNull(configuration);
 
@@ -81,7 +80,7 @@ public class Uploader {
    *
    * @param batch Batch to upload
    */
-  public void upload(@Nonnull final Batch batch) {
+  public void upload(final Batch batch) {
     batchSize.update(batch.size());
     batchCount.update(batch.getCount());
 

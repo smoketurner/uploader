@@ -87,10 +87,11 @@ public final class AccessControlListFilter extends RuleBasedIpFilter {
   /**
    * Convert an IP address and a rule type into an {@link IpSubnetFilterRule}
    *
+   * <p>TODO this assumes IPv4 default CIDR masks for now
+   *
    * @param ip IP address (may contain a CIDR range)
    * @param ruleType rule type, either accept or reject
    * @return ip rule filter
-   * @todo this assumes IPv4 default CIDR masks for now
    */
   public static IpSubnetFilterRule convertIp(final String ip, final IpFilterRuleType ruleType) {
     if (!ip.contains("/")) {

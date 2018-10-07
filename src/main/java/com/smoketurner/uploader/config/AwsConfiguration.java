@@ -29,13 +29,13 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
-import software.amazon.awssdk.services.sts.STSClient;
+import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
@@ -154,7 +154,8 @@ public class AwsConfiguration {
   public AwsCredentialsProvider getCredentials() {
     final AwsCredentialsProvider credentials;
     if (!Strings.isNullOrEmpty(accessKey) && !Strings.isNullOrEmpty(secretKey)) {
-      credentials = StaticCredentialsProvider.create(AwsCredentials.create(accessKey, secretKey));
+      credentials =
+          StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
     } else {
       credentials = DefaultCredentialsProvider.create();
     }
@@ -163,8 +164,8 @@ public class AwsConfiguration {
       return credentials;
     }
 
-    final STSClient stsClient =
-        STSClient.builder().credentialsProvider(credentials).region(region).build();
+    final StsClient stsClient =
+        StsClient.builder().credentialsProvider(credentials).region(region).build();
 
     final AssumeRoleRequest assumeRoleRequest =
         AssumeRoleRequest.builder().roleArn(stsRoleArn).build();

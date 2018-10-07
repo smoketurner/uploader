@@ -101,7 +101,7 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
     if (curBatch.compareAndSet(null, newBatch)) {
       return newBatch;
     }
-    return curBatch.get();
+    return getBatch(ctx);
   }
 
   private Batch newBatch(final ChannelHandlerContext ctx) throws IOException {

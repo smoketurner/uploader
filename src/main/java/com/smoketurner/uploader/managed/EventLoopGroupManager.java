@@ -19,7 +19,6 @@ import io.dropwizard.lifecycle.Managed;
 import io.netty.channel.EventLoopGroup;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
 
 public class EventLoopGroupManager implements Managed {
 
@@ -30,7 +29,7 @@ public class EventLoopGroupManager implements Managed {
    *
    * @param loop EventLoopGroup to manage
    */
-  public EventLoopGroupManager(@Nonnull final EventLoopGroup loop) {
+  public EventLoopGroupManager(final EventLoopGroup loop) {
     this.loop = Objects.requireNonNull(loop);
   }
 

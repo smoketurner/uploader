@@ -19,7 +19,6 @@ import io.dropwizard.lifecycle.Managed;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 public class ChannelFutureManager implements Managed {
 
@@ -30,7 +29,7 @@ public class ChannelFutureManager implements Managed {
    *
    * @param future ChannelFuture to manage
    */
-  public ChannelFutureManager(@Nonnull final ChannelFuture future) {
+  public ChannelFutureManager(final ChannelFuture future) {
     this.future = Objects.requireNonNull(future);
   }
 
