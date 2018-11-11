@@ -15,7 +15,6 @@
  */
 package com.smoketurner.uploader.core;
 
-import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -38,7 +37,7 @@ import org.slf4j.LoggerFactory;
 public final class Batch {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Batch.class);
-  private static final byte[] NEWLINE = "\n".getBytes(StandardCharsets.UTF_8);
+  private static final byte[] NEWLINE = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
   private static final DateTimeFormatter KEY_DATE_FORMAT =
       DateTimeFormatter.ofPattern("yyyy/MM/dd/HH/mm/ss").withZone(ZoneOffset.UTC);
 
@@ -165,7 +164,7 @@ public final class Batch {
       msg.update(str.getBytes(StandardCharsets.UTF_8), 0, str.length());
       return new BigInteger(1, msg.digest()).toString(16).substring(0, length);
     } catch (NoSuchAlgorithmException ignore) {
-      return Strings.repeat("_", length);
+      return "_".repeat(length);
     }
   }
 }
