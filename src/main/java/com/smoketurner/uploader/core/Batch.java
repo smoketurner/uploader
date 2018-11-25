@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Smoke Turner, LLC (contact@smoketurner.com)
+ * Copyright © 2018 Smoke Turner, LLC (github@smoketurner.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.smoketurner.uploader.core;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -40,6 +39,7 @@ public final class Batch {
   private static final byte[] NEWLINE = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
   private static final DateTimeFormatter KEY_DATE_FORMAT =
       DateTimeFormatter.ofPattern("yyyy/MM/dd/HH/mm/ss").withZone(ZoneOffset.UTC);
+  private static final MessageDigest MESSAGE_DIGEST;
 
   private final AtomicInteger eventCount = new AtomicInteger(0);
   private final AtomicBoolean finished = new AtomicBoolean(false);
@@ -48,6 +48,14 @@ public final class Batch {
   private final Optional<String> customerId;
   private final GZIPOutputStream compressor;
   private final Instant createdAt;
+
+  static {
+    try {
+      MESSAGE_DIGEST = MessageDigest.getInstance("md5");
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /**
    * Constructor
@@ -158,13 +166,9 @@ public final class Batch {
    * @param length Length of hash to return
    * @return Hash character
    */
-  public static String getHash(final String str, final int length) {
-    try {
-      final MessageDigest msg = MessageDigest.getInstance("md5");
-      msg.update(str.getBytes(StandardCharsets.UTF_8), 0, str.length());
-      return new BigInteger(1, msg.digest()).toString(16).substring(0, length);
-    } catch (NoSuchAlgorithmException ignore) {
-      return "_".repeat(length);
-    }
+  public static synchronized String getHash(final String str, final int length) {
+    MESSAGE_DIGEST.reset();
+    return new String(MESSAGE_DIGEST.digest(str.getBytes(StandardCharsets.UTF_8)))
+        .substring(0, length);
   }
 }

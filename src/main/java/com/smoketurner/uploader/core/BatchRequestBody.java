@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Smoke Turner, LLC (contact@smoketurner.com)
+ * Copyright © 2018 Smoke Turner, LLC (github@smoketurner.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.smoketurner.uploader.core;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.Optional;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -35,8 +36,8 @@ public class BatchRequestBody implements AsyncRequestBody {
   }
 
   @Override
-  public long contentLength() {
-    return batch.size();
+  public Optional<Long> contentLength() {
+    return Optional.of(batch.size());
   }
 
   @Override
