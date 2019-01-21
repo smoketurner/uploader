@@ -17,6 +17,7 @@ package com.smoketurner.uploader.core;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -39,7 +40,6 @@ public final class Batch {
   private static final byte[] NEWLINE = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
   private static final DateTimeFormatter KEY_DATE_FORMAT =
       DateTimeFormatter.ofPattern("yyyy/MM/dd/HH/mm/ss").withZone(ZoneOffset.UTC);
-  private static final MessageDigest MESSAGE_DIGEST;
 
   private final AtomicInteger eventCount = new AtomicInteger(0);
   private final AtomicBoolean finished = new AtomicBoolean(false);
@@ -48,14 +48,6 @@ public final class Batch {
   private final Optional<String> customerId;
   private final GZIPOutputStream compressor;
   private final Instant createdAt;
-
-  static {
-    try {
-      MESSAGE_DIGEST = MessageDigest.getInstance("md5");
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   /**
    * Constructor
@@ -166,9 +158,24 @@ public final class Batch {
    * @param length Length of hash to return
    * @return Hash character
    */
-  public static synchronized String getHash(final String str, final int length) {
-    MESSAGE_DIGEST.reset();
-    return new String(MESSAGE_DIGEST.digest(str.getBytes(StandardCharsets.UTF_8)))
-        .substring(0, length);
+  public static String getHash(final String str, final int length) {
+    try {
+      final MessageDigest digest = MessageDigest.getInstance("md5");
+      final byte[] bytes = digest.digest(str.getBytes(StandardCharsets.UTF_8));
+      return toHexString(bytes).substring(0, length);
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Convert a byte array into a hexidecimal string.
+   *
+   * @param bytes input byte array
+   * @return hex string
+   */
+  public static String toHexString(byte[] bytes) {
+    final BigInteger bi = new BigInteger(1, bytes);
+    return String.format("%0" + (bytes.length << 1) + "x", bi);
   }
 }

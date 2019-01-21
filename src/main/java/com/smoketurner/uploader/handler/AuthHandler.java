@@ -115,7 +115,7 @@ public final class AuthHandler extends ChannelInboundHandlerAdapter {
       parts =
           Splitter.on(',').omitEmptyStrings().trimResults().withKeyValueSeparator('=').split(name);
     } catch (IllegalArgumentException e) {
-      LOGGER.warn("Invalid certificate subject: " + name, e);
+      LOGGER.warn("Invalid certificate subject: " + name);
       return Optional.empty();
     }
 

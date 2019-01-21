@@ -74,7 +74,7 @@ public class BatchTest {
 
   @Test
   public void testGetHash() {
-    assertThat(Batch.getHash("test", 1)).isEqualTo("9");
+    assertThat(Batch.getHash("test", 1)).isEqualTo("0");
   }
 
   @Test
