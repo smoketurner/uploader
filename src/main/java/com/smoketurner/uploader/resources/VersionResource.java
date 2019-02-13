@@ -18,11 +18,13 @@ package com.smoketurner.uploader.resources;
 import com.google.common.annotations.VisibleForTesting;
 import io.dropwizard.jersey.caching.CacheControl;
 import java.util.Objects;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+@Singleton
 @Path("/version")
 public class VersionResource {
 

@@ -64,11 +64,11 @@ public final class Batch {
     compressor = new GZIPOutputStream(buffer, true);
   }
 
-  public static Batch create(String customerId) throws IOException {
+  public static Batch create(@Nullable String customerId) throws IOException {
     return builder(customerId).build();
   }
 
-  public static Builder builder(String customerId) {
+  public static Builder builder(@Nullable String customerId) {
     return new Builder(customerId);
   }
 

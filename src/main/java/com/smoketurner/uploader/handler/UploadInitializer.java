@@ -19,6 +19,7 @@ import com.google.common.base.Strings;
 import com.google.common.primitives.Ints;
 import com.smoketurner.uploader.config.NettyConfiguration;
 import com.smoketurner.uploader.core.Uploader;
+import io.dropwizard.util.Size;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -51,23 +52,23 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
   @Nullable private final AccessControlListFilter ipFilter;
 
   private final long maxLength;
-  private final long maxUploadBytes;
+  private final Size maxUploadSize;
 
   /**
    * Constructor
    *
    * @param configuration Netty configuration
    * @param uploader AWS S3 uploader
-   * @param maxUploadBytes Maximum size of S3 upload in bytes
+   * @param maxUploadSize Maximum size of S3 upload
    */
   public UploadInitializer(
-      final NettyConfiguration configuration, final Uploader uploader, final long maxUploadBytes) {
+      final NettyConfiguration configuration, final Uploader uploader, final Size maxUploadSize) {
 
     this.configuration = Objects.requireNonNull(configuration);
     this.sslCtx = getSslContext();
 
     this.maxLength = configuration.getMaxLength().toBytes();
-    this.maxUploadBytes = maxUploadBytes;
+    this.maxUploadSize = maxUploadSize;
 
     // handlers
     this.uploadHandler = new UploadHandler(uploader);
@@ -116,8 +117,8 @@ public class UploadInitializer extends ChannelInitializer<SocketChannel> {
     // convert each data chunk into a byte array
     p.addLast("decoder", new ByteArrayDecoder());
 
-    // batch and compress chunks of data up to maxUploadBytes
-    p.addLast("batcher", new BatchHandler(maxUploadBytes));
+    // batch and compress chunks of data up to maxUploadSize
+    p.addLast("batcher", new BatchHandler(maxUploadSize));
 
     // upload the batch to S3
     p.addLast("uploader", uploadHandler);

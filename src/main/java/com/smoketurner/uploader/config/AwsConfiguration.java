@@ -126,7 +126,7 @@ public class AwsConfiguration {
   }
 
   @JsonProperty
-  public void setPrefix(final String prefix) {
+  public void setPrefix(@Nullable final String prefix) {
     this.prefix = Optional.ofNullable(prefix);
   }
 
@@ -136,7 +136,7 @@ public class AwsConfiguration {
   }
 
   @JsonProperty
-  public void setProxy(final HostAndPort proxy) {
+  public void setProxy(@Nullable final HostAndPort proxy) {
     this.proxy = Optional.ofNullable(proxy);
   }
 

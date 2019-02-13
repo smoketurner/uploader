@@ -99,7 +99,7 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
     final Uploader uploader = new Uploader(s3, awsConfig);
 
     final UploadInitializer initializer =
-        new UploadInitializer(nettyConfig, uploader, maxUploadSize.toBytes());
+        new UploadInitializer(nettyConfig, uploader, maxUploadSize);
 
     final ServerBootstrap bootstrap = new ServerBootstrap();
 
@@ -117,7 +117,7 @@ public class UploaderApplication extends Application<UploaderConfiguration> {
     environment.lifecycle().manage(new ChannelFutureManager(future));
 
     // Resources
-    environment.jersey().register(new BatchResource(uploader));
+    environment.jersey().register(new BatchResource(uploader, maxUploadSize));
     environment.jersey().register(new PingResource());
     environment.jersey().register(new VersionResource());
   }

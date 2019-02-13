@@ -16,11 +16,13 @@
 package com.smoketurner.uploader.resources;
 
 import io.dropwizard.jersey.caching.CacheControl;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+@Singleton
 @Path("/ping")
 public class PingResource {
 

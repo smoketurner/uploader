@@ -19,6 +19,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.smoketurner.uploader.core.Batch;
+import io.dropwizard.util.Size;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.io.IOException;
@@ -41,10 +42,10 @@ public final class BatchHandler extends SimpleChannelInboundHandler<byte[]> {
   /**
    * Constructor
    *
-   * @param maxUploadBytes Maximum size of AWS S3 file to upload
+   * @param maxUploadSize Maximum size of AWS S3 file to upload
    */
-  public BatchHandler(final long maxUploadBytes) {
-    this.maxUploadBytes = maxUploadBytes;
+  public BatchHandler(final Size maxUploadSize) {
+    this.maxUploadBytes = maxUploadSize.toBytes();
 
     final MetricRegistry registry = SharedMetricRegistries.getDefault();
     this.eventMeter = registry.meter(MetricRegistry.name(BatchHandler.class, "event-rate"));

@@ -15,9 +15,13 @@
  */
 package com.smoketurner.uploader.resources;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.smoketurner.uploader.core.Batch;
 import com.smoketurner.uploader.core.Uploader;
 import com.smoketurner.uploader.handler.AuthHandler;
+import io.dropwizard.util.Size;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +29,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -41,14 +46,24 @@ public class BatchResource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BatchResource.class);
   private final Uploader uploader;
+  private final long maxUploadBytes;
+  private final AtomicReference<Batch> curBatch = new AtomicReference<>();
+
+  // metrics
+  private final Meter eventMeter;
 
   /**
    * Constructor
    *
    * @param uploader Uploader
+   * @param maxUploadSize Maximum size of AWS S3 file to upload
    */
-  public BatchResource(final Uploader uploader) {
+  public BatchResource(final Uploader uploader, final Size maxUploadSize) {
     this.uploader = Objects.requireNonNull(uploader);
+    this.maxUploadBytes = maxUploadSize.toBytes();
+
+    final MetricRegistry registry = SharedMetricRegistries.getDefault();
+    this.eventMeter = registry.meter(MetricRegistry.name(BatchResource.class, "event-rate"));
   }
 
   @POST
@@ -60,34 +75,89 @@ public class BatchResource {
       throw new WebApplicationException("No customerId found in request");
     }
 
-    final Batch batch;
-    try {
-      batch = Batch.create(customerId.get());
-    } catch (IOException e) {
-      LOGGER.error("Unable to create batch", e);
-      throw new WebApplicationException("Unable to create batch", e);
-    }
+    final String custId = customerId.get();
 
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+
       reader
           .lines()
           .map(line -> line.getBytes(StandardCharsets.UTF_8))
-          .forEach(
-              line -> {
-                try {
-                  batch.add(line);
-                } catch (IOException e) {
-                  LOGGER.error("Unable to process line", e);
-                }
-              });
+          .forEach(line -> processLine(custId, line));
     } catch (IOException e) {
       LOGGER.error("Unable to read input", e);
       throw new WebApplicationException("Unable to read input", e);
     }
 
-    uploader.upload(batch);
+    // Check for any remaining items in the batch
+    final Batch batch = curBatch.get();
+    if (batch != null && !batch.isEmpty()) {
+      batch.finish();
+      uploader.upload(batch);
+      curBatch.set(null);
+    }
 
     return Response.accepted().build();
+  }
+
+  /**
+   * Process a line of input and add it to the batch
+   *
+   * @param customerId Customer ID
+   * @param line Line of input
+   */
+  private void processLine(final String customerId, final byte[] line) {
+    eventMeter.mark();
+
+    try {
+      final Batch batch = getBatch(customerId);
+
+      batch.add(line);
+
+      if (batch.size() > maxUploadBytes) {
+        LOGGER.debug(
+            "Batch size {} bytes exceeds max upload size of {} bytes",
+            batch.size(),
+            maxUploadBytes);
+
+        batch.finish();
+        uploader.upload(batch);
+        curBatch.set(newBatch(customerId));
+      }
+    } catch (IOException e) {
+      LOGGER.error("Unable to process line", e);
+    }
+  }
+
+  /**
+   * Get the latest batch or create a new batch
+   *
+   * @param customerId Customer ID
+   * @return an existing batch or a new batch
+   * @throws IOException if unable to create a batch
+   */
+  private Batch getBatch(final String customerId) throws IOException {
+    final Batch batch = curBatch.get();
+    if (batch != null) {
+      return batch;
+    }
+
+    final Batch newBatch = newBatch(customerId);
+    if (curBatch.compareAndSet(null, newBatch)) {
+      return newBatch;
+    }
+    return getBatch(customerId);
+  }
+
+  /**
+   * Create a new batch
+   *
+   * @param customerId Customer ID
+   * @return new batch
+   * @throws IOException if unable to create the batch
+   */
+  private Batch newBatch(final String customerId) throws IOException {
+    LOGGER.debug("Creating new batch for: {}", customerId);
+    return Batch.builder(customerId).withSize(maxUploadBytes).build();
   }
 }
