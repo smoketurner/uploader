@@ -34,7 +34,7 @@
     <url>https://github.com/smoketurner/uploader</url>
 
     <properties>
-        <netty.version>4.1.35.Final</netty.version>
+        <netty.version>4.1.36.Final</netty.version>
         <aws.version>2.5.33</aws.version>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.source>11</maven.compiler.source>
